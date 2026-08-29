@@ -1,0 +1,249 @@
+:root {
+    --ink: #172033;
+    --muted: #667085;
+    --line: #d9e0ea;
+    --paper: #ffffff;
+    --surface: #f6f8fb;
+    --brand: #1f6feb;
+    --brand-dark: #184fb0;
+    --accent: #0f766e;
+}
+
+body {
+    margin: 0;
+    background: var(--surface);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.navbar-brand {
+    color: var(--brand-dark);
+}
+
+.login-section {
+    min-height: calc(100vh - 57px);
+    display: flex;
+    align-items: center;
+    padding: 48px 0;
+    background:
+        linear-gradient(rgba(246, 248, 251, 0.88), rgba(246, 248, 251, 0.95)),
+        url("https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1800&q=80") center/cover;
+}
+
+.section-label {
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.stats-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    max-width: 640px;
+}
+
+.stats-strip div,
+.login-panel,
+.section-block {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.stats-strip div {
+    padding: 16px;
+}
+
+.stats-strip strong,
+.stats-strip span {
+    display: block;
+}
+
+.stats-strip span {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+.login-panel {
+    padding: 28px;
+    box-shadow: 0 24px 60px rgba(23, 32, 51, 0.12);
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-bg: var(--brand-dark);
+    --bs-btn-hover-border-color: var(--brand-dark);
+}
+
+.app-section {
+    padding: 32px 0 48px;
+}
+
+.page-heading,
+.section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.page-heading {
+    margin-bottom: 24px;
+}
+
+.section-block {
+    padding: 20px;
+}
+
+.exam-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.demo-search {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.exam-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+    min-height: 178px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.exam-meta {
+    color: var(--muted);
+    display: flex;
+    gap: 12px;
+    font-size: 0.9rem;
+    margin: 8px 0 16px;
+}
+
+.question-list {
+    display: grid;
+    gap: 16px;
+}
+
+.question-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.question-card legend {
+    float: none;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.answer-options {
+    display: grid;
+    gap: 8px;
+}
+
+.answer-option {
+    align-items: flex-start;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+}
+
+.answer-option input {
+    margin-top: 4px;
+}
+
+.exam-actions {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.account-list {
+    margin: 0;
+}
+
+.account-list div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.account-list div:last-child {
+    border-bottom: 0;
+}
+
+.account-list dt {
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.account-list dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+}
+
+.result-list {
+    display: grid;
+    gap: 10px;
+}
+
+.result-item {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.result-item strong,
+.result-item span {
+    display: block;
+}
+
+.result-item span {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.empty-state {
+    color: var(--muted);
+    margin: 0;
+    padding: 16px 0 0;
+}
+
+@media (max-width: 768px) {
+    .stats-strip,
+    .exam-grid,
+    .demo-search {
+        grid-template-columns: 1fr;
+    }
+
+    .page-heading,
+    .section-title {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

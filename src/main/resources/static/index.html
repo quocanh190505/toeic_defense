@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TOEIC Practice Center</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#">TOEIC Practice Center</a>
+        <div class="d-flex align-items-center gap-3">
+            <span id="navUser" class="text-muted small d-none"></span>
+            <button id="logoutButton" class="btn btn-outline-secondary btn-sm d-none" type="button">Dang xuat</button>
+        </div>
+    </div>
+</nav>
+
+<main>
+    <section id="loginView" class="login-section">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6">
+                    <p class="section-label">Online TOEIC Preparation</p>
+                    <h1 class="display-5 fw-bold mb-3">Luyen thi TOEIC</h1>
+                    <p class="lead text-muted mb-4">
+                        Lam bai reading, theo doi diem so va quan ly tien do hoc tap trong mot khong gian gon gang.
+                    </p>
+                    <div class="stats-strip">
+                        <div>
+                            <strong>2 ky nang</strong>
+                            <span>Listening va Reading</span>
+                        </div>
+                        <div>
+                            <strong>990 diem</strong>
+                            <span>Thang diem TOEIC</span>
+                        </div>
+                        <div>
+                            <strong>60 phut</strong>
+                            <span>Bai demo rut gon</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-5 offset-lg-1">
+                    <div class="login-panel">
+                        <ul class="nav nav-pills auth-tabs mb-4">
+                            <li class="nav-item">
+                                <button id="showLoginTab" class="nav-link active" type="button">Dang nhap</button>
+                            </li>
+                            <li class="nav-item">
+                                <button id="showRegisterTab" class="nav-link" type="button">Dang ky</button>
+                            </li>
+                        </ul>
+
+                        <form id="loginForm">
+                            <h2 class="h4 mb-1">Dang nhap</h2>
+                            <p class="text-muted mb-4">Su dung tai khoan hoc vien de vao phong luyen thi.</p>
+
+                            <label class="form-label" for="username">Ten dang nhap</label>
+                            <input id="username" class="form-control mb-3" autocomplete="username" required>
+
+                            <label class="form-label" for="password">Mat khau</label>
+                            <input id="password" type="password" class="form-control mb-3" autocomplete="current-password" required>
+
+                            <button class="btn btn-primary w-100" type="submit">Vao phong luyen thi</button>
+                        </form>
+
+                        <form id="registerForm" class="d-none">
+                            <h2 class="h4 mb-1">Tao tai khoan</h2>
+                            <p class="text-muted mb-4">Dang ky tai khoan hoc vien moi de bat dau luyen thi.</p>
+
+                            <label class="form-label" for="registerUsername">Ten dang nhap</label>
+                            <input id="registerUsername" class="form-control mb-3" autocomplete="username" required>
+
+                            <label class="form-label" for="registerPassword">Mat khau</label>
+                            <input id="registerPassword" type="password" class="form-control mb-3" autocomplete="new-password" required>
+
+                            <button class="btn btn-primary w-100" type="submit">Tao tai khoan</button>
+                        </form>
+
+                        <div id="authMessage" class="alert mt-3 d-none" role="alert"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="appView" class="app-section d-none">
+        <div class="container">
+            <div class="page-heading">
+                <div>
+                    <p class="section-label">Student Dashboard</p>
+                    <h1 class="h2 mb-1">Phong luyen thi cua ban</h1>
+                    <p class="text-muted mb-0">Chon de thi, nop bai va theo doi ket qua gan day.</p>
+                </div>
+                <button id="refreshSessionButton" class="btn btn-outline-primary" type="button">Lam moi phien</button>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="section-block mb-4">
+                        <div class="section-title">
+                            <div>
+                                <p class="section-label mb-1">Exam Search</p>
+                                <h2 class="h5 mb-0">Tim kiem de thi</h2>
+                            </div>
+                        </div>
+                        <div class="demo-search mt-3">
+                            <input id="demoSearchKeyword" class="form-control" value="TOEIC" aria-label="Tu khoa tim kiem de thi">
+                            <button id="unsafeSearchButton" class="btn btn-primary" type="button">Tim kiem</button>
+                        </div>
+                        <div id="demoSearchResult" class="result-list mt-3"></div>
+                    </div>
+
+                    <div class="section-block">
+                        <div class="section-title">
+                            <h2 class="h5 mb-0">De thi dang mo</h2>
+                            <span class="text-muted small">Cap nhat hang ngay</span>
+                        </div>
+                        <div id="examList" class="exam-grid"></div>
+                    </div>
+
+                    <div id="examWorkspace" class="section-block mt-4 d-none">
+                        <div class="section-title">
+                            <div>
+                                <p class="section-label mb-1">Practice Test</p>
+                                <h2 id="activeExamTitle" class="h5 mb-0">Lam bai</h2>
+                            </div>
+                            <button id="closeExamButton" class="btn btn-outline-secondary btn-sm" type="button">Dong bai</button>
+                        </div>
+                        <div id="examMessage" class="alert mt-3 d-none" role="alert"></div>
+                        <form id="examForm" class="question-list mt-3"></form>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="section-block">
+                        <h2 class="h5 mb-3">Thong tin tai khoan</h2>
+                        <dl class="account-list">
+                            <div>
+                                <dt>Ma hoc vien</dt>
+                                <dd id="accountId">-</dd>
+                            </div>
+                            <div>
+                                <dt>Ten dang nhap</dt>
+                                <dd id="accountUsername">-</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <div class="section-block mt-4">
+                        <h2 class="h5 mb-3">Ket qua cua toi</h2>
+                        <div id="resultList" class="result-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminPanel" class="section-block mt-4 d-none">
+                <div class="section-title">
+                    <div>
+                        <p class="section-label mb-1">Administration</p>
+                        <h2 class="h5 mb-0">Quan tri he thong</h2>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button id="loadUsersButton" class="btn btn-dark btn-sm" type="button">Danh sach hoc vien</button>
+                        <button id="loadAnswersButton" class="btn btn-dark btn-sm" type="button">Ngan hang dap an</button>
+                    </div>
+                </div>
+                <div id="adminContent" class="table-responsive"></div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
