@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Làm bài TOEIC</title>
+
+    <link rel="stylesheet" href="style.css?v=5">
+
+</head>
+
+
+<body class="exam-page">
+
+<header class="exam-header">
+
+    <div class="navbar">
+
+        <a class="exam-brand" href="exams.html">TOEIC PTIT</a>
+
+        <div class="exam-status">
+            <div class="timer">
+                Thời gian còn lại: <strong id="time">2:00:00</strong>
+            </div>
+            <div class="answered-count">
+                Đã làm: <strong id="answeredCount">0/0</strong> câu
+            </div>
+        </div>
+
+    </div>
+
+</header>
+
+
+<main class="question-container">
+
+    <div class="exam-heading">
+        <div>
+            <p class="exam-eyebrow">BÀI THI TOEIC</p>
+            <h1 id="examTitle">Đang tải đề thi...</h1>
+        </div>
+        <span id="questionSummary" class="question-summary">0 câu hỏi</span>
+    </div>
+
+    <div id="examMessage" class="exam-message" role="status"></div>
+
+    <form id="examForm" class="question-list">
+        <p class="loading-text">Đang tải câu hỏi...</p>
+    </form>
+
+    <div class="exam-footer-actions">
+        <span id="footerAnsweredCount">Đã làm 0/0 câu</span>
+        <button id="submitExamButton" class="submit-exam-button" type="submit" form="examForm">
+            Nộp bài
+        </button>
+    </div>
+
+</main>
+
+<div id="scoreModal" class="score-modal" role="dialog" aria-modal="true" aria-labelledby="scoreModalTitle" hidden>
+    <div class="score-modal-card">
+        <p class="score-modal-kicker">KẾT QUẢ BÀI THI</p>
+        <h2 id="scoreModalTitle">Nộp bài thành công!</h2>
+        <p class="score-modal-score-label">Điểm của bạn</p>
+        <p id="scoreValue" class="score-modal-score">0</p>
+        <a class="home-button" href="home.html">Về trang chủ</a>
+    </div>
+</div>
+
+<script src="exam.js?v=4"></script>
+
+</body>
+
+</html>

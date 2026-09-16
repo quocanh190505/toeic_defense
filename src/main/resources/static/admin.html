@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOEIC PTIT - Quản trị</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="home-page">
+    <header class="header">
+        <div class="navbar">
+            <div class="brand"><h2>TOEIC PTIT</h2></div>
+            <nav class="nav-menu">
+                <a href="home.html">Trang chủ</a>
+                <a href="exams.html">Đề thi</a>
+                <a href="admin-results.html">Lịch sử làm bài</a>
+                <a href="admin.html" class="active">Admin</a>
+            </nav>
+            <div class="user-menu">
+                <span id="username">Xin chào</span>
+                <button id="logoutBtn">Đăng xuất</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="exam-container">
+        <h1>Quản lý đề thi</h1>
+        <p id="adminMessage" class="auth-message" role="status"></p>
+
+        <section class="admin-section">
+            <h2>Danh sách đề thi</h2>
+            <div id="adminExamList" class="exam-list">
+                <p>Đang tải danh sách đề thi...</p>
+            </div>
+        </section>
+
+        <section class="admin-section">
+            <h2>Thêm đề thi</h2>
+            <form id="examForm">
+                <div class="form-group">
+                    <label for="examTitle">Tên đề thi</label>
+                    <input id="examTitle" type="text" required>
+                </div>
+                <div class="form-group">
+                    <label for="examDescription">Mô tả</label>
+                    <textarea id="examDescription" rows="3"></textarea>
+                </div>
+                <button type="submit">Tạo đề thi</button>
+            </form>
+        </section>
+
+        <section class="admin-section">
+            <h2>Thêm câu hỏi</h2>
+            <form id="questionForm">
+                <div class="form-group">
+                    <label for="questionExamId">ID đề thi</label>
+                    <input id="questionExamId" type="number" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="questionNumber">Số câu</label>
+                    <input id="questionNumber" type="number" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="questionContent">Nội dung câu hỏi</label>
+                    <textarea id="questionContent" rows="3" required></textarea>
+                </div>
+                <div class="form-group"><label for="optionA">Đáp án A</label><input id="optionA" required></div>
+                <div class="form-group"><label for="optionB">Đáp án B</label><input id="optionB" required></div>
+                <div class="form-group"><label for="optionC">Đáp án C</label><input id="optionC" required></div>
+                <div class="form-group"><label for="optionD">Đáp án D</label><input id="optionD" required></div>
+                <div class="form-group"><label for="correctAnswer">Đáp án đúng (A, B, C hoặc D)</label><input id="correctAnswer" maxlength="1" pattern="[A-Da-d]" required></div>
+                <button type="submit">Thêm câu hỏi</button>
+            </form>
+        </section>
+
+        <section class="admin-section">
+            <h2>Upload file PDF</h2>
+            <p>File PDF cần có câu hỏi, các dòng A/B/C/D và dòng Đáp án: A/B/C/D cho mỗi câu.</p>
+            <div class="form-group">
+                <label for="pdfFileInput">Chọn file .pdf</label>
+                <input id="pdfFileInput" type="file" accept="application/pdf,.pdf" />
+            </div>
+            <div class="form-group">
+                <label for="pdfExamId">ID đề thi</label>
+                <input id="pdfExamId" type="number" min="1" required>
+            </div>
+            <button id="uploadPdfBtn" type="button">Đọc file PDF và nhập câu hỏi</button>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="admin.js?v=4"></script>
+</body>
+</html>

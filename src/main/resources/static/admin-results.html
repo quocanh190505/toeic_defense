@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử làm bài - Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="result-page">
+<header class="main-header">
+    <div class="navbar result-navbar">
+        <a href="admin.html" class="brand">TOEIC PTIT</a>
+        <nav>
+            <a href="admin.html">Quản trị đề thi</a>
+            <a href="admin-results.html" class="active">Lịch sử làm bài</a>
+            <a href="home.html">Trang chủ</a>
+            <a href="#" id="logoutButton">Đăng xuất</a>
+        </nav>
+    </div>
+</header>
+
+<main class="result-container">
+    <section class="result-heading">
+        <h1>Lịch sử làm bài</h1>
+        <p>Xem toàn bộ lịch sử làm bài của các tài khoản.</p>
+    </section>
+
+    <section class="filter-box">
+        <div class="filter-group">
+            <label for="examFilter">Bài thi</label>
+            <select id="examFilter"><option value="">Tất cả bài thi</option></select>
+        </div>
+        <div class="filter-group">
+            <label for="userFilter">Tài khoản</label>
+            <select id="userFilter"><option value="">Tất cả tài khoản</option></select>
+        </div>
+        <div class="filter-group">
+            <label for="fromDate">Từ ngày</label>
+            <input type="date" id="fromDate">
+        </div>
+        <div class="filter-group">
+            <label for="toDate">Đến ngày</label>
+            <input type="date" id="toDate">
+        </div>
+        <div class="filter-actions">
+            <button id="filterButton" class="filter-button" type="button">LỌC</button>
+            <button id="resetButton" class="reset-button" type="button">Đặt lại</button>
+        </div>
+    </section>
+
+    <div id="resultMessage" class="result-message">Đang tải lịch sử làm bài...</div>
+    <section id="resultList" class="result-grid"></section>
+</main>
+
+<script src="admin-results.js"></script>
+</body>
+</html>
