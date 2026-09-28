@@ -1,364 +1,217 @@
-# TOEIC Defense Backend
+# TOEIC Defense - Spring Boot & MySQL Security Lab
 
-Website Spring Boot ket noi MySQL phuc vu de tai:
+> **Đề tài nghiên cứu & thực nghiệm:**  
+> *"Kiến trúc, các thành phần, tính năng và các cơ chế bảo mật của MySQL. Xây dựng website kết nối database trong MySQL; thực nghiệm một số demo tấn công và triển khai các cơ chế bảo mật của MySQL để khắc phục. Đánh giá hiệu quả trước và sau khi áp dụng giải pháp."*
 
-> Kien truc, cac thanh phan, tinh nang va cac co che bao mat cua MySQL. Xay dung website don gian ket noi database trong MySQL; thuc nghiem mot so demo tan cong va trien khai cac co che bao mat cua MySQL de khac phuc. Demo danh gia hieu qua truoc va sau khi ap dung giai phap.
+---
 
-## Muc tieu project
+## 📌 1. Giới thiệu tổng quan
 
-- Xay dung backend Spring Boot cho website luyen thi TOEIC.
-- Ket noi MySQL va thao tac voi cac bang `users`, `profiles`, `exams`, `questions`, `exam_answers`, `exam_results`.
-- DEMO 1: SQL Injection trong login unsafe va authentication bypass.
-- DEMO 1 mo rong: endpoint doi role unsafe de minh hoa leo thang dac quyen.
-- DEMO 2: SQL Injection trong tim kiem de thi va MySQL database fingerprinting bang `UNION SELECT VERSION()`.
-- DEMO after: endpoint an toan dung parameter binding de ngan SQL Injection.
+**TOEIC Defense** là một hệ thống web full-stack kết hợp giữa **ứng dụng luyện thi TOEIC trực tuyến** hoàn chỉnh và **môi trường kiểm thử an toàn thông tin (Security Lab)** thực tế.
 
-## Canh bao lab
+Hệ thống được thiết kế phục vụ 2 mục tiêu song hành:
+1. **Nghiệp vụ thực tế:** 
+   - **Học viên:** Đăng nhập, tra cứu đề thi, làm bài thi trắc nghiệm trực tuyến có đếm ngược thời gian (timer), nộp bài tự động tính điểm, xem lịch sử làm bài và làm lại bài thi.
+   - **Quản trị viên (Admin):** Quản lý ngân hàng đề thi, thêm/sửa/xoá câu hỏi và đáp án, quản lý tài khoản người dùng & phân quyền hệ thống (Role-based Access Control), theo dõi toàn bộ lịch sử thi của học viên.
+2. **Security Lab (Minh họa tấn công & Phòng thủ CSDL MySQL):**
+   - Trực tiếp mô phỏng các kỹ thuật tấn công phổ biến nhắm vào tầng CSDL (SQL Injection Auth Bypass, Data Extraction & Database Fingerprinting, Privilege Escalation).
+   - Triển khai và đối sánh các cơ chế phòng thủ chuyên sâu: **PreparedStatement / Parameter Binding**, **Mã hoá mật khẩu một chiều BCrypt**, **Nguyên tắc đặc quyền tối thiểu (Least Privilege)** và **Phân tách tài khoản MySQL (User Privilege Separation)**.
 
-Project nay co cac endpoint vulnerable duoc tao co chu dich de phuc vu security lab:
+---
 
-- `POST /api/auth/loginUnsafe`
-- `GET /api/exams/searchUnsafe?keyword=...`
-- `PUT /users/{id}/roleUnsafe`
+## 🛠 2. Công nghệ sử dụng
 
-Khong dung cac endpoint nay trong production. Chi test tren moi truong local, Docker lab, hoac he thong duoc phep kiem thu.
+- **Ngôn ngữ:** Java 21 LTS
+- **Backend Framework:** Spring Boot 4.x / 3.4.x (Spring Web MVC, Spring Data JPA)
+- **Bảo mật & Xác thực:** Spring Security, OAuth2 Resource Server, JWT (Nimbus JOSE + JWT), BCrypt Password Encoder
+- **Cơ sở dữ liệu:** MySQL Server 8.x (Hỗ trợ cấu hình lab MySQL 5.5.x cho CVE testing)
+- **Thư viện phụ trợ:** Lombok, MapStruct
+- **Frontend:** HTML5, CSS3 hiện đại, Vanilla JavaScript (Single/Multi-page static app, không phụ thuộc nặng framework bên thứ ba)
+- **Build tool:** Maven Wrapper (`mvnw` / `mvnw.cmd`)
 
-## Cong nghe su dung
+---
 
-- Java 21+
-- Spring Boot 4.1.1
-- Spring Web MVC
-- Spring Data JPA
-- Spring Security OAuth2 Resource Server
-- JWT
-- MySQL
-- Maven Wrapper
-- Lombok
-- MapStruct
+## 👥 3. Tài khoản mặc định & Tự động khởi tạo dữ liệu
 
-## Yeu cau truoc khi chay
+Hệ thống tích hợp sẵn `DataInitializer` (chạy tự động khi ứng dụng khởi động lần đầu):
 
-Thanh vien nhom can cai:
+| Tài khoản (Username) | Mật khẩu (Password) | Vai trò (Role) | Chức năng chính |
+| :--- | :--- | :--- | :--- |
+| **`admin`** | `admin` | **`ADMIN`** | Quản trị đề thi, câu hỏi, tài khoản người dùng, phân quyền, xem toàn bộ lịch sử thi |
+| **`student1`** | `123456` | **`USER`** | Luyện thi TOEIC, nộp bài, xem lịch sử làm bài cá nhân |
 
-- JDK 21 hoac moi hon
-- MySQL Server 8.x
-- Git
-- IDE: IntelliJ IDEA hoac VS Code
-- Burp Suite Community neu muon test red team
-- Docker neu muon dung lab CVE rieng
+> [!NOTE]  
+> Mật khẩu được tự động băm bằng thuật toán **BCrypt** trước khi lưu vào bảng `users` trong MySQL.  
+> Để đảm bảo tính bảo mật của hệ thống nội bộ, tính năng đăng ký tài khoản tự do ngoài trang chủ đã được khóa (`/api/auth/register` trả về `403 Forbidden`). Việc cấp tài khoản mới được quản lý tập trung bởi Admin tại trang Quản trị.
 
-Kiem tra Java:
+---
 
-```powershell
-java -version
-```
+## 🚀 4. Hướng dẫn cài đặt & Chạy ứng dụng
 
-Kiem tra MySQL dang chay:
+### 4.1. Yêu cầu môi trường
+- **JDK 21** hoặc mới hơn: kiểm tra bằng `java -version`
+- **MySQL Server 8.x**: kiểm tra bằng `mysql --version`
+- **Git**
+- Trình duyệt hiện đại (Chrome, Edge, Firefox)
+- *(Tùy chọn cho kiểm thử)*: Burp Suite Community / Postman / cURL
 
-```powershell
-mysql --version
-```
-
-## Clone project
-
-```powershell
-git clone <GITHUB_REPO_URL>
-cd toeic-defense-backend
-```
-
-Neu repo GitHub chua co, xem phan "Huong dan day project len GitHub" ben duoi.
-
-## Cau hinh database
-
-Tao database:
+### 4.2. Khởi tạo Database MySQL
+Mở MySQL Client hoặc MySQL Workbench, tạo cơ sở dữ liệu `toeic_db`:
 
 ```sql
-CREATE DATABASE IF NOT EXISTS toeic_db;
+CREATE DATABASE IF NOT EXISTS toeic_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE toeic_db;
 ```
 
-Mo file:
-
-```text
-src/main/resources/application.properties
-```
-
-Sua thong tin ket noi MySQL theo may cua tung thanh vien:
-
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/toeic_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-spring.datasource.username=root
-spring.datasource.password=YOUR_MYSQL_PASSWORD
-```
-
-Khuyen nghi moi thanh vien dung password MySQL rieng tren may minh. Khong nen commit password that len GitHub trong project production.
-
-Project dang de:
-
-```properties
-spring.jpa.hibernate.ddl-auto=update
-```
-
-Khi chay app, Hibernate se tu tao/cap nhat schema theo entity.
-
-## Import data mau
-
-Sau khi database `toeic_db` da ton tai, co the import file:
-
-```text
-src/main/resources/demo-mysql-security.sql
-```
-
-Bang MySQL command line:
-
+*(Tùy chọn)* Nạp sẵn bộ dữ liệu mẫu đề thi TOEIC và tài khoản phân quyền MySQL:
 ```powershell
 mysql -u root -p toeic_db < src/main/resources/demo-mysql-security.sql
 ```
 
-Hoac mo file SQL trong MySQL Workbench roi chay.
+### 4.3. Cấu hình file `application.properties`
+Mở file `src/main/resources/application.properties` và chỉnh sửa mật khẩu MySQL máy của bạn:
 
-File nay tao du lieu mau cho:
+```properties
+spring.application.name=toeic-defense-backend
+spring.datasource.url=jdbc:mysql://localhost:3306/toeic_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+spring.datasource.username=root
+spring.datasource.password=YOUR_MYSQL_PASSWORD
 
-- De thi
-- Cau hoi
-- Dap an
-- Mot so user MySQL minh hoa least privilege
+# Cấu hình cổng chạy ứng dụng (mặc định 8090, có thể chỉnh 8080 nếu cần)
+server.port=8090
 
-## Chay project
+# Hibernate cấu hình tự động cập nhật bảng
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
 
-Tu thu muc goc Spring Boot:
-
-```powershell
-cd toeic-defense-backend
-.\mvnw.cmd spring-boot:run
+# Khóa bí mật ký JWT
+jwt.signerKey=4c6e10c9680cb914433276664cac8c82fa33f0608e022ec374df5379ef5c5ae0116227deeb217afb409231aa67a562e6a57ccf624f88005b8ac3e7769b160f72
 ```
 
-Mac dinh app chay tai:
+### 4.4. Biên dịch và khởi chạy
+Từ thư mục chứa project (`toeic-defense-backend`):
 
+- **Trên Windows (PowerShell / Command Prompt):**
+  ```powershell
+  .\mvnw.cmd spring-boot:run
+  ```
+- **Trên Linux / macOS:**
+  ```bash
+  chmod +x mvnw
+  ./mvnw spring-boot:run
+  ```
+
+Khi màn hình console xuất hiện dòng chữ thông báo:
 ```text
-http://localhost:8080
+Started ToeicDefenseBackendApplication in ... seconds
+```
+Ứng dụng đã sẵn sàng tại địa chỉ: **`http://localhost:8090`** (hoặc port bạn đã cấu hình).
+
+---
+
+## 🖥 5. Sơ đồ các trang giao diện (Web Frontend)
+
+| Đường dẫn (URL) | Tệp HTML tương ứng | Mô tả chức năng | Quyền truy cập |
+| :--- | :--- | :--- | :--- |
+| `http://localhost:8090/login.html` | `login.html` | Đăng nhập hệ thống (hỗ trợ cả mode bảo mật và test lab SQLi) | Public |
+| `http://localhost:8090/home.html` | `home.html` | Trang chủ giới thiệu, điều hướng luyện thi | Đã đăng nhập (`USER` / `ADMIN`) |
+| `http://localhost:8090/exams.html` | `exams.html` | Danh sách đề thi TOEIC, tìm kiếm đề thi | Đã đăng nhập |
+| `http://localhost:8090/exam.html?id={id}` | `exam.html` | Giao diện phòng thi trực tuyến, đếm ngược giờ, nộp bài | Đã đăng nhập |
+| `http://localhost:8090/result.html` | `result.html` | Lịch sử làm bài thi cá nhân, lọc theo ngày/trạng thái | Học viên (`USER`) |
+| `http://localhost:8090/admin.html` | `admin.html` | Quản trị người dùng, phân quyền, ngân hàng đề thi & câu hỏi | **`ADMIN`** |
+| `http://localhost:8090/admin-results.html` | `admin-results.html` | Giám sát kết quả & lịch sử làm bài của toàn bộ học viên | **`ADMIN`** |
+
+> **Tính năng đổi mật khẩu cá nhân:** Tích hợp trực tiếp tại thanh Menu trên tất cả các trang nội bộ qua nút **"🔑 Đổi mật khẩu"**, sử dụng API an toàn mã hóa BCrypt.
+
+---
+
+## 🎯 6. Kịch bản thực nghiệm Bảo mật (Security Lab)
+
+### 🔴 DEMO 1: SQL Injection Login & Authentication Bypass
+
+#### 1. Lỗ hổng (Unsafe Endpoint):
+- **Endpoint:** `POST /api/auth/loginUnsafe`
+- **Cơ chế lỗi trong code:** Câu truy vấn SQL được tạo bằng cách cộng chuỗi trực tiếp từ input người dùng:
+  ```java
+  String sql = "SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'";
+  ```
+- **Khai thác (Attack Payload):**
+  - Gửi body JSON:
+    ```json
+    {
+      "username": "admin' OR '1'='1",
+      "password": "anything"
+    }
+    ```
+  - Hoặc bypass bằng ký tự comment SQL:
+    ```json
+    {
+      "username": "admin' -- ",
+      "password": ""
+    }
+    ```
+- **Kết quả trước khi khắc phục:** Câu lệnh trở thành `WHERE username = 'admin' OR '1'='1' ...`, luôn trả về bản ghi hợp lệ. Kẻ tấn công đăng nhập thành công vào tài khoản `admin` mà **không cần biết mật khẩu**, máy chủ cấp JWT Token với quyền quản trị viên.
+
+#### 2. Giải pháp khắc phục (Secure Implementation):
+- **Endpoint an toàn:** `POST /api/auth/loginSecure`
+- **Cơ chế phòng thủ:**
+  1. Sử dụng Spring Data JPA Repository (`userRepository.findByUsername(username)`) thực thi câu truy vấn qua **PreparedStatement** (tham số hóa Parameter Binding). Input người dùng được xử lý thuần túy là dữ liệu chuỗi (literal data), không thể làm thay đổi cấu trúc cú pháp của lệnh SQL.
+  2. Mật khẩu không bao giờ so sánh chuỗi trần trong SQL mà được băm bằng thuật toán một chiều an toàn:
+     ```java
+     passwordEncoder.matches(request.getPassword(), user.getPassword())
+     ```
+  3. Mọi payload SQL Injection đưa vào đều bị coi là username không tồn tại, trả về `401 Unauthorized` hoặc `400 Bad Request`.
+
+---
+
+### 🔴 DEMO 1 (Mở rộng): Lỗ hổng Leo thang đặc quyền (Privilege Escalation)
+
+#### 1. Lỗ hổng:
+- **Endpoint:** `PUT /users/{id}/roleUnsafe`
+- **Mô tả:** Cho phép client gửi trực tiếp role mới lên server mà không kiểm tra thẩm quyền của người thực hiện:
+  ```json
+  {
+    "role": "ADMIN"
+  }
+  ```
+- **Hậu quả:** Học viên có tài khoản `USER` thông thường có thể tự cấp quyền `ADMIN` cho chính mình để chiếm quyền điều khiển hệ thống.
+
+#### 2. Khắc phục:
+- Áp dụng kiểm soát truy cập dựa trên vai trò (Role-Based Access Control - RBAC) tại tầng Service & Controller:
+  - Chỉ endpoint có `@PreAuthorize("hasRole('ADMIN')")` hoặc thuộc quyền quản trị Admin mới được thay đổi role.
+  - Phân tách riêng DTO cho người dùng và DTO cho quản trị viên.
+
+---
+
+### 🔴 DEMO 2: SQL Injection Search & MySQL Database Fingerprinting
+
+#### 1. Lỗ hổng & Khai thác Fingerprint (Unsafe Endpoint):
+- **Endpoint:** `GET /api/exams/searchUnsafe?keyword={payload}`
+- **Cơ chế lỗi:** Ghép chuỗi trong câu lệnh tìm kiếm:
+  ```java
+  String sql = "SELECT title FROM exams WHERE title LIKE '%" + keyword + "%'";
+  ```
+- **Khai thác (UNION-Based SQL Injection để trích xuất phiên bản CSDL):**
+  - Payload kiểm tra phiên bản MySQL:
+    ```text
+    ' UNION SELECT VERSION() -- 
+    ```
+  - URL-encoded payload:
+    ```text
+    %27%20UNION%20SELECT%20VERSION()%20--%20
+    ```
+  - Payload trích xuất tên người dùng hiện tại và tên database:
+    ```text
+    %27%20UNION%20SELECT%20CONCAT(USER(),%20'%20-%20',%20DATABASE(),%20'%20-%20',%20VERSION())%20--%20
+    ```
+
+**Ví dụ thực hiện bằng cURL:**
+```bash
+curl -X GET "http://localhost:8090/api/exams/searchUnsafe?keyword=%27%20UNION%20SELECT%20VERSION()%20--%20" \
+     -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
 ```
 
-Neu cong 8080 dang bi chiem:
-
-```powershell
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"
-```
-
-Mo:
-
-```text
-http://localhost:8081
-```
-
-## Chay test
-
-```powershell
-.\mvnw.cmd test
-```
-
-Neu test pass se thay:
-
-```text
-BUILD SUCCESS
-```
-
-## Tai khoan va dang nhap
-
-Co the dang ky truc tiep tren giao dien web.
-
-Hoac goi API:
-
-```http
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "username": "student1",
-  "password": "123456"
-}
-```
-
-Dang nhap:
-
-```http
-POST /api/auth/loginUnsafe
-Content-Type: application/json
-
-{
-  "username": "student1",
-  "password": "123456"
-}
-```
-
-Response tra ve JWT token:
-
-```json
-{
-  "token": "..."
-}
-```
-
-## Cac endpoint chinh
-
-Auth:
-
-```text
-POST /api/auth/register
-POST /api/auth/loginUnsafe
-POST /api/auth/loginSecure
-GET  /api/auth/me
-POST /api/auth/refresh
-```
-
-Exam:
-
-```text
-GET    /exams
-GET    /exams/{examId}
-POST   /exams
-PUT    /exams/{examId}
-DELETE /exams/{examId}
-```
-
-Question:
-
-```text
-GET /questions/exam/{examId}
-```
-
-Submit exam:
-
-```text
-POST /exam-results/submit
-GET  /exam-results/me
-```
-
-DEMO 2:
-
-```text
-GET /api/exams/searchUnsafe?keyword=<input>
-GET /api/exams/search?keyword=<input>
-```
-
-## DEMO 1: SQL Injection login unsafe
-
-Endpoint:
-
-```text
-POST /api/auth/loginUnsafe
-```
-
-Muc tieu:
-
-```text
-SQL Injection -> Authentication Bypass
-```
-
-Payload vi du:
-
-```json
-{
-  "username": "admin' OR '1'='1",
-  "password": "anything"
-}
-```
-
-Ket qua mong doi truoc khi khac phuc:
-
-- Co the dang nhap khong can password dung.
-- Server tra ve JWT token neu payload phu hop voi query unsafe.
-
-## DEMO 1 mo rong: Leo thang dac quyen
-
-Endpoint unsafe:
-
-```text
-PUT /users/{id}/roleUnsafe
-```
-
-Payload:
-
-```json
-{
-  "role": "ADMIN"
-}
-```
-
-Muc tieu:
-
-```text
-User thuong -> doi role -> ADMIN -> truy cap API quan tri
-```
-
-Day la endpoint lab de minh hoa loi authorization. Khong dung trong production.
-
-## DEMO 2: SQL Injection va MySQL fingerprinting
-
-Endpoint vulnerable:
-
-```text
-GET /api/exams/searchUnsafe?keyword=<input>
-```
-
-Query vulnerable trong code:
-
-```sql
-SELECT title FROM exams WHERE title LIKE '%<keyword>%'
-```
-
-Endpoint an toan:
-
-```text
-GET /api/exams/search?keyword=<input>
-```
-
-Query safe:
-
-```sql
-SELECT title FROM exams WHERE title LIKE ?
-```
-
-Endpoint safe dung parameter binding nen payload SQL Injection khong duoc thuc thi.
-
-### Test tim kiem binh thuong
-
-```http
-GET /api/exams/searchUnsafe?keyword=TOEIC
-Authorization: Bearer <TOKEN>
-```
-
-### Test fingerprinting bang Burp Suite
-
-1. Mo Burp Suite.
-2. Bat proxy browser qua Burp.
-3. Dang nhap vao website.
-4. Tren web, tim kiem de thi binh thuong.
-5. Trong Burp, bat request:
-
-```http
-GET /api/exams/searchUnsafe?keyword=TOEIC HTTP/1.1
-Host: localhost:8080
-Authorization: Bearer <TOKEN>
-```
-
-6. Send request sang Repeater.
-7. Doi `keyword` thanh payload da URL encode:
-
-```text
-%27%20UNION%20SELECT%20VERSION()%20--%20
-```
-
-Request:
-
-```http
-GET /api/exams/searchUnsafe?keyword=%27%20UNION%20SELECT%20VERSION()%20--%20 HTTP/1.1
-Host: localhost:8080
-Authorization: Bearer <TOKEN>
-```
-
-Ket qua mong doi:
-
+**Kết quả trả về:**
 ```json
 [
   {
@@ -366,172 +219,138 @@ Ket qua mong doi:
   }
 ]
 ```
+> Kẻ tấn công xác định chính xác phiên bản CSDL đang vận hành (MySQL Fingerprinting), từ đó tra cứu các lỗ hổng đã công bố (CVE) tương ứng với phiên bản đó.
 
-Version thuc te phu thuoc MySQL dang ket noi.
+#### 2. Giải pháp khắc phục:
+- **Endpoint an toàn:** `GET /api/exams/search?keyword={keyword}`
+- **Cơ chế phòng thủ:**
+  - Sử dụng Parameter Binding trong JPA Query:
+    ```java
+    @Query("SELECT e FROM Exam e WHERE e.title LIKE %:keyword%")
+    List<Exam> searchExams(@Param("keyword") String keyword);
+    ```
+  - Khi gửi cùng payload trên vào endpoint an toàn, hệ thống chỉ tìm kiếm đề thi nào có tiêu đề chứa chuỗi ký tự `' UNION SELECT VERSION() -- ` và trả về danh sách rỗng (`[]`), loại bỏ hoàn toàn khả năng thực thi lệnh injection.
 
-### Test bang curl
+---
 
-```bash
-curl -H "Authorization: Bearer TOKEN_CUA_BAN" \
-"http://localhost:8080/api/exams/searchUnsafe?keyword=%27%20UNION%20SELECT%20VERSION()%20--%20"
+### 🔴 DEMO 3: Cơ chế bảo mật MySQL Least Privilege & User Separation
+
+Một trong những sai lầm bảo mật phổ biến nhất là để ứng dụng web kết nối CSDL bằng tài khoản `root`. Nếu bị SQL Injection, kẻ tấn công có toàn quyền đọc ghi file, drop database hoặc chiếm quyền server.
+
+Trong file `src/main/resources/demo-mysql-security.sql`, giải pháp **Đặc quyền tối thiểu (Least Privilege)** được cấu hình như sau:
+
+```sql
+-- 1. Tạo user ứng dụng với đặc quyền giới hạn DML (Data Manipulation Language)
+CREATE USER IF NOT EXISTS 'toeic_app'@'localhost' IDENTIFIED BY 'AppPassword123@!';
+
+-- 2. Chỉ cấp quyền đọc và ghi dữ liệu nghiệp vụ, TUYỆT ĐỐI KHÔNG cấp quyền DDL hoặc quyền quản trị
+GRANT SELECT, INSERT, UPDATE, DELETE ON toeic_db.* TO 'toeic_app'@'localhost';
+
+-- 3. Tạo user chỉ đọc (dành cho module báo cáo / audit log)
+CREATE USER IF NOT EXISTS 'toeic_readonly'@'localhost' IDENTIFIED BY 'ReadOnly123@!';
+GRANT SELECT ON toeic_db.* TO 'toeic_readonly'@'localhost';
+
+FLUSH PRIVILEGES;
 ```
 
-Test endpoint safe:
+**Đánh giá hiệu quả bảo mật:**
+- Ngay cả khi xảy ra lỗi SQL Injection, câu lệnh `DROP TABLE`, `ALTER TABLE` hay truy cập CSDL hệ thống `mysql.*` đều bị MySQL Engine từ chối:
+  ```text
+  ERROR 1142 (42000): DROP command denied to user 'toeic_app'@'localhost' for table 'users'
+  ```
+- Không thể sử dụng các hàm nguy hiểm như `LOAD_FILE()` hoặc `INTO OUTFILE` để trích xuất file nhạy cảm `/etc/passwd` hay ghi Web Shell.
 
-```bash
-curl -H "Authorization: Bearer TOKEN_CUA_BAN" \
-"http://localhost:8080/api/exams/search?keyword=%27%20UNION%20SELECT%20VERSION()%20--%20"
-```
+---
 
-Ket qua:
+## 📋 7. Bảng tổng hợp Endpoint API
 
-- `searchUnsafe`: co the tra ve MySQL version.
-- `search`: khong thuc thi `UNION SELECT`, payload chi la chuoi tim kiem.
+### Xác thực & Phân quyền (`/api/auth`)
+| Method | Endpoint | Quyền hạn | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/loginSecure` | Public | Đăng nhập an toàn (JPA PreparedStatement + BCrypt) |
+| `POST` | `/api/auth/loginUnsafe` | Public | **(Lab)** Đăng nhập lỗi ghép chuỗi SQLi |
+| `POST` | `/api/auth/register` | Disabled | Đăng ký công khai (đã khóa - chỉ cấp tài khoản qua Admin) |
+| `PUT` | `/api/auth/changePasswordSecure` | Authenticated | Đổi mật khẩu cá nhân an toàn |
 
-## Ket noi voi CVE-2012-2122 lab
+### Đề thi & Câu hỏi (`/exams`, `/questions`, `/api/exams`)
+| Method | Endpoint | Quyền hạn | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/exams` | Authenticated | Lấy danh sách tất cả đề thi |
+| `GET` | `/exams/{id}` | Authenticated | Lấy thông tin chi tiết một đề thi |
+| `POST` | `/exams` | `ADMIN` | Thêm mới đề thi |
+| `PUT` | `/exams/{id}` | `ADMIN` | Cập nhật đề thi |
+| `DELETE` | `/exams/{id}` | `ADMIN` | Xóa đề thi |
+| `GET` | `/questions/exam/{examId}` | Authenticated | Lấy danh sách câu hỏi kèm 4 lựa chọn theo đề thi |
+| `POST` | `/questions` | `ADMIN` | Thêm câu hỏi và đáp án đúng |
+| `PUT` | `/questions/{id}` | `ADMIN` | Cập nhật câu hỏi và đáp án |
+| `DELETE` | `/questions/{id}` | `ADMIN` | Xóa câu hỏi |
+| `GET` | `/api/exams/search` | Authenticated | Tìm kiếm đề thi an toàn (Parameterized) |
+| `GET` | `/api/exams/searchUnsafe` | Authenticated | **(Lab)** Tìm kiếm lỗi SQLi Fingerprinting |
 
-Project Spring Boot nay chi phuc vu:
+### Nộp bài & Kết quả thi (`/exam-results`)
+| Method | Endpoint | Quyền hạn | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/exam-results/submit` | Authenticated | Nộp bài thi, chấm điểm tự động và lưu lịch sử |
+| `GET` | `/exam-results/me` | Authenticated | Xem lịch sử các lần thi của học viên đang đăng nhập |
+| `GET` | `/exam-results` | `ADMIN` | Lấy toàn bộ lịch sử nộp bài của tất cả học viên |
+
+### Quản trị người dùng (`/users`)
+| Method | Endpoint | Quyền hạn | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/users` | `ADMIN` | Xem danh sách tất cả tài khoản trong hệ thống |
+| `POST` | `/users` | `ADMIN` | Tạo mới tài khoản học viên hoặc admin |
+| `PUT` | `/users/{id}` | `ADMIN` | Cập nhật username, mật khẩu mới hoặc đổi role |
+| `DELETE` | `/users/{id}` | `ADMIN` | Xóa tài khoản người dùng |
+| `PUT` | `/users/{id}/roleUnsafe` | Authenticated | **(Lab)** Endpoint đổi role thiếu kiểm soát quyền |
+
+---
+
+## 📂 8. Cấu trúc thư mục nguồn
 
 ```text
-SQL Injection -> Database Fingerprinting -> MySQL Version -> Vulnerability Assessment
+toeic-defense-backend/
+├── pom.xml                               # File cấu hình dependencies Maven
+├── mvnw / mvnw.cmd                       # Maven Wrapper thực thi không cần cài sẵn Maven
+└── src/
+    ├── main/
+    │   ├── java/com/toeic_defense_backend/
+    │   │   ├── ToeicDefenseBackendApplication.java # Class khởi chạy Spring Boot
+    │   │   ├── config/
+    │   │   │   ├── SecurityConfig.java   # Cấu hình Spring Security, JWT & phân quyền URL
+    │   │   │   └── DataInitializer.java  # Tự động nạp tài khoản admin & student1
+    │   │   ├── controller/               # REST Controllers xử lý Request
+    │   │   ├── dto/                      # Request / Response Transfer Objects
+    │   │   ├── entity/                   # JPA Entities (User, Exam, Question, ExamResult, ...)
+    │   │   ├── exception/                # Quản lý ngoại lệ tập trung (GlobalExceptionHandler)
+    │   │   ├── repository/
+    │   │   │   ├── unsafe/               # Các Repository chứa lỗi SQL Injection có chủ đích
+    │   │   │   │   ├── UnsafeAuthRepository.java
+    │   │   │   │   └── UnsafeExamSearchRepository.java
+    │   │   │   └── ...                   # Spring Data JPA Repositories an toàn
+    │   │   └── service/                  # Business Logic Layer
+    │   └── resources/
+    │       ├── application.properties    # Cấu hình DB, Port, JWT SignerKey
+    │       ├── demo-mysql-security.sql   # Script SQL phân quyền Least Privilege & data mẫu
+    │       └── static/                   # Toàn bộ giao diện Web Frontend
+    │           ├── login.html / login.js
+    │           ├── home.html / home.js
+    │           ├── exams.html / exams.js
+    │           ├── exam.html / exam.js
+    │           ├── result.html / result.js
+    │           ├── admin.html / admin.js
+    │           ├── admin-results.html / admin-results.js
+    │           ├── change-password.js
+    │           └── style.css
+    └── test/                             # Unit Test & Integration Test
 ```
 
-Khong trien khai CVE-2012-2122 trong Spring Boot.
+---
 
-CVE-2012-2122 nen duoc dung trong Docker lab rieng:
+## ⚠️ 9. Khuyến cáo & Lưu ý bảo mật
 
-```text
-Fingerprint thay MySQL 5.5.x truoc 5.5.24
--> danh gia co nguy co CVE-2012-2122
--> chuyen sang Docker MySQL vulnerable lab
--> validate CVE trong moi truong co kiem soat
-```
-
-Neu DB hien tai la MySQL 8.0.44 thi response `VERSION()` se la `8.0.44`. Neu backend ket noi toi MySQL lab 5.5.23 that thi response se la `5.5.23`.
-
-## Cau truc project
-
-```text
-src/main/java/com/toeic_defense_backend
-|-- config
-|   |-- SecurityConfig.java
-|-- controller
-|   |-- AuthController.java
-|   |-- ExamController.java
-|   |-- ExamSearchController.java
-|   |-- QuestionController.java
-|   |-- ExamResultController.java
-|-- dto
-|   |-- request
-|   |-- response
-|-- entity
-|   |-- User.java
-|   |-- Exam.java
-|   |-- Question.java
-|   |-- ExamAnswer.java
-|   |-- ExamResult.java
-|-- repository
-|   |-- unsafe
-|       |-- UnsafeAuthRepository.java
-|       |-- UnsafeExamSearchRepository.java
-|-- service
-|-- service/impl
-```
-
-Static frontend:
-
-```text
-src/main/resources/static
-|-- index.html
-|-- app.js
-|-- style.css
-```
-
-## Huong dan day project len GitHub
-
-Chay cac lenh sau tai thu muc chua project Spring Boot, noi co file `pom.xml`:
-
-```powershell
-cd F:\toeic-defense-backend\toeic-defense-backend
-git init
-git add .
-git commit -m "Initial TOEIC defense security lab"
-```
-
-Tao repository moi tren GitHub:
-
-1. Vao `https://github.com/new`.
-2. Dat ten repo, vi du `toeic-defense-backend`.
-3. Chon Public hoac Private.
-4. Khong can tao README tren GitHub vi project da co README.
-5. Bam Create repository.
-
-Sau do link local repo voi GitHub:
-
-```powershell
-git branch -M main
-git remote add origin https://github.com/<USERNAME>/toeic-defense-backend.git
-git push -u origin main
-```
-
-Neu GitHub yeu cau dang nhap, dung GitHub account hoac Personal Access Token.
-
-## Moi thanh vien nhom clone ve lam
-
-Sau khi repo da duoc push:
-
-```powershell
-git clone https://github.com/<USERNAME>/toeic-defense-backend.git
-cd toeic-defense-backend
-```
-
-Moi thanh vien can sua:
-
-```text
-src/main/resources/application.properties
-```
-
-Doi password MySQL theo may cua minh:
-
-```properties
-spring.datasource.password=YOUR_MYSQL_PASSWORD
-```
-
-Sau do chay:
-
-```powershell
-.\mvnw.cmd spring-boot:run
-```
-
-## Workflow lam viec nhom
-
-Moi thanh vien nen tao branch rieng:
-
-```powershell
-git checkout -b ten-thanh-vien/chuc-nang
-```
-
-Sau khi sua code:
-
-```powershell
-git status
-git add .
-git commit -m "Mo ta ngan gon thay doi"
-git push -u origin ten-thanh-vien/chuc-nang
-```
-
-Len GitHub tao Pull Request vao branch `main`.
-
-Truoc khi push nen chay:
-
-```powershell
-.\mvnw.cmd test
-```
-
-## Luu y bao mat khi nop bai
-
-- Khong dung endpoint unsafe trong production.
-- Khong test Burp/Kali tren he thong khong duoc phep.
-- Neu public GitHub repo, can than voi password database trong `application.properties`.
-- Nen tao file cau hinh rieng theo may neu can lam nghiem tuc hon, vi du dung environment variables.
-
+1. **Phạm vi kiểm thử an toàn:**  
+   Các endpoint `loginUnsafe`, `searchUnsafe` và `roleUnsafe` được xây dựng phục vụ **mục đích học tập, nghiên cứu và diễn tập trong khuôn khổ đề tài**. Tuyệt đối không đưa các endpoint này vào môi trường production hoặc các hệ thống thực tế.
+2. **Bảo mật mã nguồn:**  
+   Không commit mật khẩu nhạy cảm của CSDL thật lên các kho lưu trữ Git công khai (GitHub public repo). Khuyến khích sử dụng biến môi trường (`Environment Variables`) hoặc file cấu hình riêng biệt (`application-local.properties`).
+3. **Tuân thủ đạo đức an toàn thông tin:**  
+   Chỉ thực hiện quét và khai thác thử nghiệm (bằng Burp Suite, SQLMap, Kali Linux) trên chính máy cục bộ (localhost) hoặc môi trường lab được cấp phép.
