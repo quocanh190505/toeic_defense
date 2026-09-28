@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = window.location.protocol.startsWith("http")
+    ? ""
+    : "http://localhost:8090";
 const accessToken = localStorage.getItem("toeicAccessToken") || "";
 const resultList = document.getElementById("resultList");
 const resultMessage = document.getElementById("resultMessage");

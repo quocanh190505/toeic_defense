@@ -2,215 +2,93 @@
 <html lang="vi">
 
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Lịch sử làm bài - TOEIC PTIT</title>
-
-    <link rel="stylesheet" href="style.css">
-
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
-
 
 <body class="result-page">
 
-
 <!-- ================= HEADER ================= -->
-
 <header class="main-header">
-
     <div class="navbar result-navbar">
-
         <a href="home.html" class="brand">
             TOEIC PTIT
         </a>
 
-
         <nav>
-
-            <a href="home.html">
-                Trang chủ
-            </a>
-
-            <a href="exams.html">
-                Đề thi
-            </a>
-
-            <a href="result.html" class="active">
-                Lịch sử làm bài
-            </a>
-
-            <a href="#" id="logoutButton">
-                Đăng xuất
-            </a>
-
+            <a href="home.html">Trang chủ</a>
+            <a href="exams.html">Đề thi</a>
+            <a href="result.html" class="active">Lịch sử làm bài</a>
+            <span id="navUsername" style="color: #ffd166; font-weight: 600; font-size: 14px; margin-left: 6px;"></span>
+            <button type="button" id="changePasswordBtn" class="change-pw-btn" style="margin-left: 8px;">🔑 Đổi mật khẩu</button>
+            <a href="#" id="logoutButton" class="logout-link">Đăng xuất</a>
         </nav>
-
     </div>
-
 </header>
 
-
 <!-- ================= MAIN ================= -->
-
 <main class="result-container">
 
-
     <!-- ================= TITLE ================= -->
-
     <section class="result-heading">
-
-        <h1>Lịch sử làm bài</h1>
-
-        <p>
-            Xem lại các lần thi TOEIC của bạn và theo dõi kết quả.
-        </p>
-
+        <h1>Lịch sử làm bài thi</h1>
+        <p>Xem lại các lần thi TOEIC của bạn, theo dõi điểm số và đánh giá tiến độ học tập.</p>
     </section>
-
 
     <!-- ================= FILTER ================= -->
-
     <section class="filter-box">
-
-
         <!-- BÀI THI -->
-
         <div class="filter-group">
-
-            <label for="examFilter">
-                Bài thi
-            </label>
-
+            <label for="examFilter">Bài thi</label>
             <select id="examFilter">
-
-                <option value="">
-                    Tất cả bài thi
-                </option>
-
+                <option value="">Tất cả bài thi</option>
             </select>
-
         </div>
-
 
         <!-- TRẠNG THÁI -->
-
         <div class="filter-group">
-
-            <label for="statusFilter">
-                Trạng thái
-            </label>
-
+            <label for="statusFilter">Trạng thái</label>
             <select id="statusFilter">
-
-                <option value="">
-                    Tất cả trạng thái
-                </option>
-
-                <option value="Hoàn thành">
-                    Hoàn thành
-                </option>
-
-                <option value="Đang làm">
-                    Đang làm
-                </option>
-
+                <option value="">Tất cả trạng thái</option>
+                <option value="Hoàn thành">Hoàn thành</option>
+                <option value="Đang làm">Đang làm</option>
             </select>
-
         </div>
-
 
         <!-- TỪ NGÀY -->
-
         <div class="filter-group">
-
-            <label for="fromDate">
-                Từ ngày
-            </label>
-
-            <input
-                type="date"
-                id="fromDate"
-            >
-
+            <label for="fromDate">Từ ngày</label>
+            <input type="date" id="fromDate">
         </div>
-
 
         <!-- ĐẾN NGÀY -->
-
         <div class="filter-group">
-
-            <label for="toDate">
-                Đến ngày
-            </label>
-
-            <input
-                type="date"
-                id="toDate"
-            >
-
+            <label for="toDate">Đến ngày</label>
+            <input type="date" id="toDate">
         </div>
-
 
         <!-- BUTTON -->
-
         <div class="filter-actions">
-
-            <button
-                id="filterButton"
-                class="filter-button"
-                type="button"
-            >
-                LỌC
-            </button>
-
-
-            <button
-                id="resetButton"
-                class="reset-button"
-                type="button"
-            >
-                Đặt lại
-            </button>
-
+            <button id="filterButton" class="filter-button" type="button">Lọc</button>
+            <button id="resetButton" class="reset-button" type="button">Đặt lại</button>
         </div>
-
-
     </section>
-
 
     <!-- ================= THÔNG BÁO ================= -->
-
-    <div
-        id="resultMessage"
-        class="result-message"
-    >
-        Đang tải lịch sử làm bài...
-    </div>
-
+    <div id="resultMessage" class="result-message">Đang tải lịch sử làm bài...</div>
 
     <!-- ================= DANH SÁCH KẾT QUẢ ================= -->
-
-    <section
-        id="resultList"
-        class="result-grid"
-    >
-
+    <section id="resultList" class="result-grid">
         <!-- JavaScript sẽ tự render dữ liệu ở đây -->
-
     </section>
-
 
 </main>
 
-
 <!-- ================= JAVASCRIPT ================= -->
-
-    <script src="result.js?v=2"></script>
-
+<script src="result.js?v=6"></script>
+<script src="change-password.js?v=11"></script>
 
 </body>
-
 </html>

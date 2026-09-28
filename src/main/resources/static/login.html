@@ -7,10 +7,10 @@
 
     <title>TOEIC PTIT - Đăng nhập</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
 
-<body>
+<body class="login-page">
 
     <div class="login-container">
 
@@ -21,7 +21,6 @@
                 <h1>TOEIC PTIT</h1>
                 <p>Hệ thống luyện thi TOEIC</p>
             </div>
-
 
             <!-- Form đăng nhập -->
             <form id="loginForm">
@@ -34,9 +33,10 @@
                         id="username"
                         placeholder="Nhập tên đăng nhập"
                         required
+                        autocomplete="off"
+                        style="color: #0f172a; background-color: #ffffff; -webkit-text-fill-color: #0f172a; caret-color: #0f172a;"
                     >
                 </div>
-
 
                 <div class="form-group">
                     <label for="password">Mật khẩu</label>
@@ -45,10 +45,10 @@
                         type="password"
                         id="password"
                         placeholder="Nhập mật khẩu"
-                        required
+                        autocomplete="off"
+                        style="color: #0f172a; background-color: #ffffff; -webkit-text-fill-color: #0f172a; caret-color: #0f172a;"
                     >
                 </div>
-
 
                 <button type="submit">
                     Đăng nhập
@@ -56,28 +56,14 @@
 
             </form>
 
-
             <p id="authMessage" class="auth-message" role="alert"></p>
-
-
-            <!-- Đăng ký -->
-           <p class="register-text">
-                Chưa có tài khoản?
-                <a href="register.html">Đăng ký</a>
-            </p>
-
-            <p class="login-text hidden-form">
-                Đã có tài khoản?
-                <a href="#" id="loginLink">Đăng nhập</a>
-            </p>
 
         </div>
 
     </div>
 
-
     <!-- JavaScript -->
-    <script src="login.js?v=3"></script>
+    <script src="login.js?v=11"></script>
 
 </body>
 

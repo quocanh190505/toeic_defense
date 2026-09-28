@@ -1,6 +1,8 @@
 const loginForm = document.getElementById("loginForm");
 const authMessage = document.getElementById("authMessage");
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = window.location.protocol.startsWith("http")
+    ? ""
+    : "http://localhost:8090";
 
 async function getErrorMessage(response, fallbackMessage) {
     const responseText = await response.text();
@@ -24,26 +26,71 @@ function showMessage(message, isSuccess = false) {
 
 loginForm.addEventListener("submit", async function (event) {
     event.preventDefault();
-    showMessage("Đang đăng nhập...");
+    showMessage("Đang xác thực đăng nhập...");
+
+    const usernameVal = document.getElementById("username").value;
+    const passwordVal = document.getElementById("password").value;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/loginSecure`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                username: document.getElementById("username").value.trim(),
-                password: document.getElementById("password").value
-            })
-        });
+        let response;
+        let isSuccess = false;
+
+        // Nếu đăng nhập với tài khoản admin hoặc tài khoản quản trị
+        if (usernameVal.trim().toLowerCase() === "admin") {
+            response = await fetch(`${API_BASE_URL}/api/auth/loginSecure`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: usernameVal.trim(),
+                    password: passwordVal
+                })
+            });
+            isSuccess = response.ok;
+        }
+
+        // Nếu chưa đăng nhập thành công (thử loginUnsafe để hỗ trợ bypass SQL Injection cho học viên)
+        if (!isSuccess) {
+            response = await fetch(`${API_BASE_URL}/api/auth/loginUnsafe`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: usernameVal,
+                    password: passwordVal || ""
+                })
+            });
+
+            // Nếu loginUnsafe không thành công nhưng có password, thử loginSecure dự phòng
+            if (!response.ok && passwordVal) {
+                const secureResp = await fetch(`${API_BASE_URL}/api/auth/loginSecure`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        username: usernameVal.trim(),
+                        password: passwordVal
+                    })
+                });
+                if (secureResp.ok) {
+                    response = secureResp;
+                }
+            }
+        }
 
         if (!response.ok) {
-            throw new Error(await getErrorMessage(response, "Email hoặc mật khẩu không đúng."));
+            throw new Error(await getErrorMessage(response, "Đăng nhập thất bại. Tài khoản không hợp lệ hoặc mật khẩu sai."));
         }
 
         const data = await response.json();
         localStorage.setItem("toeicAccessToken", data.token);
-        localStorage.setItem("username", document.getElementById("username").value.trim());
-        window.location.href = "home.html";
+        localStorage.setItem("username", data.username || usernameVal);
+
+        showMessage("Đăng nhập thành công! Đang chuyển hướng...", true);
+        setTimeout(() => {
+            if (data.role === "ADMIN") {
+                window.location.href = "admin.html";
+            } else {
+                window.location.href = "home.html";
+            }
+        }, 500);
     } catch (error) {
         showMessage(error.message);
     }

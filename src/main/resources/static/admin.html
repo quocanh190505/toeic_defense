@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOEIC PTIT - Quản trị</title>
-    <link rel="stylesheet" href="style.css">
+    <title>TOEIC PTIT - Quản trị hệ thống</title>
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body class="home-page">
     <header class="header">
@@ -14,81 +14,183 @@
                 <a href="home.html">Trang chủ</a>
                 <a href="exams.html">Đề thi</a>
                 <a href="admin-results.html">Lịch sử làm bài</a>
-                <a href="admin.html" class="active">Admin</a>
+                <a href="admin.html" class="active">Quản trị Admin</a>
             </nav>
             <div class="user-menu">
                 <span id="username">Xin chào</span>
+                <button type="button" id="changePasswordBtn" class="change-pw-btn">🔑 Đổi mật khẩu</button>
                 <button id="logoutBtn">Đăng xuất</button>
             </div>
         </div>
     </header>
 
     <main class="exam-container">
-        <h1>Quản lý đề thi</h1>
+        <div class="admin-header-title">
+            <h1>Trung tâm Quản trị Hệ thống</h1>
+            <p>Quản lý tài khoản người dùng, phân quyền hệ thống và quản lý ngân hàng đề thi.</p>
+        </div>
+
         <p id="adminMessage" class="auth-message" role="status"></p>
 
-        <section class="admin-section">
-            <h2>Danh sách đề thi</h2>
-            <div id="adminExamList" class="exam-list">
-                <p>Đang tải danh sách đề thi...</p>
-            </div>
-        </section>
+        <!-- TABS ĐIỀU HƯỚNG QUẢN TRỊ -->
+        <div class="admin-tabs">
+            <button type="button" class="admin-tab-btn active" data-tab="tab-users">👥 Quản lý Người dùng & Phân quyền</button>
+            <button type="button" class="admin-tab-btn" data-tab="tab-exams">📝 Quản lý Đề thi & Câu hỏi</button>
+        </div>
 
-        <section class="admin-section">
-            <h2>Thêm đề thi</h2>
-            <form id="examForm">
-                <div class="form-group">
-                    <label for="examTitle">Tên đề thi</label>
-                    <input id="examTitle" type="text" required>
+        <!-- ================= TAB 1: QUẢN LÝ NGƯỜI DÙNG & PHÂN QUYỀN ================= -->
+        <div id="tab-users" class="admin-tab-content active">
+            <!-- Thêm người dùng mới -->
+            <section class="admin-card">
+                <div class="admin-card-header">
+                    <h2>➕ Thêm tài khoản mới</h2>
                 </div>
-                <div class="form-group">
-                    <label for="examDescription">Mô tả</label>
-                    <textarea id="examDescription" rows="3"></textarea>
-                </div>
-                <button type="submit">Tạo đề thi</button>
-            </form>
-        </section>
+                <form id="createUserForm" class="admin-form-grid">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="newUsername">Tên đăng nhập</label>
+                        <input id="newUsername" type="text" placeholder="Nhập username..." required autocomplete="off">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="newPassword">Mật khẩu</label>
+                        <input id="newPassword" type="password" placeholder="Nhập mật khẩu..." required autocomplete="off">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="newRole">Quyền hạn (Role)</label>
+                        <select id="newRole" class="form-select">
+                            <option value="USER">USER (Học viên)</option>
+                            <option value="ADMIN">ADMIN (Quản trị viên)</option>
+                        </select>
+                    </div>
+                    <div class="form-group-btn">
+                        <button type="submit" class="primary-btn-submit">Tạo tài khoản</button>
+                    </div>
+                </form>
+            </section>
 
-        <section class="admin-section">
-            <h2>Thêm câu hỏi</h2>
-            <form id="questionForm">
-                <div class="form-group">
-                    <label for="questionExamId">ID đề thi</label>
-                    <input id="questionExamId" type="number" min="1" required>
+            <!-- Danh sách tài khoản -->
+            <section class="admin-card">
+                <div class="admin-card-header">
+                    <h2>📋 Danh sách tài khoản người dùng</h2>
+                    <button type="button" id="refreshUsersBtn" class="secondary-btn-refresh">🔄 Làm mới danh sách</button>
                 </div>
-                <div class="form-group">
-                    <label for="questionNumber">Số câu</label>
-                    <input id="questionNumber" type="number" min="1" required>
+                <div class="user-table-wrapper">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên đăng nhập</th>
+                                <th>Quyền hiện tại</th>
+                                <th>Thay đổi quyền (Role)</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <tr><td colspan="5" style="text-align:center; padding: 20px;">Đang tải danh sách tài khoản...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="form-group">
-                    <label for="questionContent">Nội dung câu hỏi</label>
-                    <textarea id="questionContent" rows="3" required></textarea>
-                </div>
-                <div class="form-group"><label for="optionA">Đáp án A</label><input id="optionA" required></div>
-                <div class="form-group"><label for="optionB">Đáp án B</label><input id="optionB" required></div>
-                <div class="form-group"><label for="optionC">Đáp án C</label><input id="optionC" required></div>
-                <div class="form-group"><label for="optionD">Đáp án D</label><input id="optionD" required></div>
-                <div class="form-group"><label for="correctAnswer">Đáp án đúng (A, B, C hoặc D)</label><input id="correctAnswer" maxlength="1" pattern="[A-Da-d]" required></div>
-                <button type="submit">Thêm câu hỏi</button>
-            </form>
-        </section>
+            </section>
+        </div>
 
-        <section class="admin-section">
-            <h2>Upload file PDF</h2>
-            <p>File PDF cần có câu hỏi, các dòng A/B/C/D và dòng Đáp án: A/B/C/D cho mỗi câu.</p>
-            <div class="form-group">
-                <label for="pdfFileInput">Chọn file .pdf</label>
-                <input id="pdfFileInput" type="file" accept="application/pdf,.pdf" />
-            </div>
-            <div class="form-group">
-                <label for="pdfExamId">ID đề thi</label>
-                <input id="pdfExamId" type="number" min="1" required>
-            </div>
-            <button id="uploadPdfBtn" type="button">Đọc file PDF và nhập câu hỏi</button>
-        </section>
+        <!-- ================= TAB 2: QUẢN LÝ ĐỀ THI & CÂU HỎI ================= -->
+        <div id="tab-exams" class="admin-tab-content">
+            <section class="admin-card">
+                <h2>Danh sách đề thi</h2>
+                <div id="adminExamList" class="exam-list">
+                    <p>Đang tải danh sách đề thi...</p>
+                </div>
+            </section>
+
+            <section class="admin-card">
+                <h2>Thêm đề thi mới</h2>
+                <form id="examForm">
+                    <div class="form-group">
+                        <label for="examTitle">Tên đề thi</label>
+                        <input id="examTitle" type="text" placeholder="Nhập tên đề thi..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="examDescription">Mô tả</label>
+                        <textarea id="examDescription" rows="3" placeholder="Nhập mô tả đề thi..."></textarea>
+                    </div>
+                    <button type="submit" class="primary-btn-submit" style="width: auto;">Tạo đề thi</button>
+                </form>
+            </section>
+
+            <section class="admin-card">
+                <h2>Thêm câu hỏi</h2>
+                <form id="questionForm">
+                    <div class="form-group">
+                        <label for="questionExamId">ID đề thi</label>
+                        <input id="questionExamId" type="number" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="questionNumber">Số câu</label>
+                        <input id="questionNumber" type="number" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="questionContent">Nội dung câu hỏi</label>
+                        <textarea id="questionContent" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group"><label for="optionA">Đáp án A</label><input id="optionA" required></div>
+                    <div class="form-group"><label for="optionB">Đáp án B</label><input id="optionB" required></div>
+                    <div class="form-group"><label for="optionC">Đáp án C</label><input id="optionC" required></div>
+                    <div class="form-group"><label for="optionD">Đáp án D</label><input id="optionD" required></div>
+                    <div class="form-group"><label for="correctAnswer">Đáp án đúng (A, B, C hoặc D)</label><input id="correctAnswer" maxlength="1" pattern="[A-Da-d]" required></div>
+                    <button type="submit" class="primary-btn-submit" style="width: auto;">Thêm câu hỏi</button>
+                </form>
+            </section>
+
+            <section class="admin-card">
+                <h2>Upload file PDF câu hỏi</h2>
+                <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                    File PDF cần có định dạng câu hỏi, các dòng lựa chọn A/B/C/D và dòng Đáp án: A/B/C/D cho mỗi câu.
+                </p>
+                <div class="form-group">
+                    <label for="pdfFileInput">Chọn file .pdf</label>
+                    <input id="pdfFileInput" type="file" accept="application/pdf,.pdf" />
+                </div>
+                <div class="form-group">
+                    <label for="pdfExamId">ID đề thi</label>
+                    <input id="pdfExamId" type="number" min="1" required>
+                </div>
+                <button id="uploadPdfBtn" type="button" class="primary-btn-submit" style="width: auto;">
+                    Đọc file PDF và nhập câu hỏi
+                </button>
+            </section>
+        </div>
     </main>
 
+    <!-- MODAL SỬA THÔNG TIN USER -->
+    <div id="editUserModal" class="score-modal" hidden>
+        <div class="score-modal-card edit-modal-card">
+            <h2>Chỉnh sửa tài khoản</h2>
+            <form id="editUserForm" style="margin-top: 20px; text-align: left;">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label for="editUsername">Tên đăng nhập</label>
+                    <input id="editUsername" type="text" required>
+                </div>
+                <div class="form-group">
+                    <label for="editPassword">Mật khẩu mới (Để trống nếu giữ nguyên)</label>
+                    <input id="editPassword" type="password" placeholder="Nhập mật khẩu mới nếu muốn đổi...">
+                </div>
+                <div class="form-group">
+                    <label for="editRole">Quyền hạn (Role)</label>
+                    <select id="editRole" class="form-select">
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="primary-btn-submit" style="flex: 1;">Lưu thay đổi</button>
+                    <button type="button" id="closeEditModalBtn" class="reset-button" style="width: auto;">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="admin.js?v=4"></script>
+    <script src="admin.js?v=11"></script>
+    <script src="change-password.js?v=11"></script>
 </body>
 </html>

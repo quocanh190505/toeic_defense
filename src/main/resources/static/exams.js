@@ -1,157 +1,41 @@
+const accessToken = localStorage.getItem("toeicAccessToken");
+
+if (!accessToken) {
+    window.location.href = "login.html";
+}
+
 const examList = document.getElementById("examList");
 const examMessage = document.getElementById("examMessage");
-
 const usernameElement = document.getElementById("username");
 const logoutBtn = document.getElementById("logoutBtn");
 
-const accessToken = localStorage.getItem("toeicAccessToken");
+const searchForm = document.getElementById("searchForm");
+const searchInput = document.getElementById("searchInput");
+const searchBtn = document.getElementById("searchBtn");
+const clearSearchBtn = document.getElementById("clearSearchBtn");
 
+let allExams = [];
 
-// Kiểm tra đăng nhập
+/* =========================
+   USER INFO & LOGOUT
+========================= */
 
-if (!accessToken) {
-
-    window.location.href = "login.html";
-
+const savedUsername = localStorage.getItem("username");
+if (usernameElement && savedUsername) {
+    usernameElement.textContent = `Xin chào, ${savedUsername}`;
 }
 
-const tokenPayload = JSON.parse(atob(accessToken.split(".")[1]));
-const adminLink = document.querySelector('a[href="admin.html"]');
-const username = localStorage.getItem("username");
-
-if (usernameElement && username) {
-    usernameElement.textContent = `Xin chào ${username}`;
+if (logoutBtn) {
+    logoutBtn.addEventListener("click", function () {
+        localStorage.removeItem("toeicAccessToken");
+        localStorage.removeItem("username");
+        window.location.href = "login.html";
+    });
 }
 
-if (adminLink && tokenPayload.role !== "ADMIN") {
-    adminLink.remove();
-}
-
-
-// Hiển thị thông báo
-
-function showMessage(message) {
-
-    examMessage.textContent = message;
-
-}
-
-
-// Lấy danh sách đề thi
-
-async function loadExams() {
-
-    try {
-
-        const response = await fetch("/exams", {
-
-            method: "GET",
-
-            headers: {
-
-                "Authorization": `Bearer ${accessToken}`
-
-            }
-
-        });
-
-
-        if (!response.ok) {
-
-            throw new Error("Không thể tải danh sách đề thi");
-
-        }
-
-
-        const result = await response.json();
-
-
-        console.log(result);
-
-
-        const exams = result.data || [];
-
-
-        if (exams.length === 0) {
-
-            examList.innerHTML = `
-                <p>Hiện chưa có đề thi nào.</p>
-            `;
-
-            return;
-
-        }
-
-
-        examList.innerHTML = "";
-
-
-        exams.forEach(exam => {
-
-            const examCard = document.createElement("div");
-
-            examCard.className = "exam-card";
-
-            const title = String(exam.title || `Đề thi ${exam.id}`);
-            const yearMatch = title.match(/\b(20\d{2})\b/);
-            const year = yearMatch ? yearMatch[1] : "2026";
-            const cleanTitle = title.replace(/\s*[-|]\s*20\d{2}\s*$/, "").trim();
-            const examName = cleanTitle || `Bộ đề ${exam.id}`;
-            const totalQuestions = exam.totalQuestions || 10;
-            const attempts = exam.attemptCount || 40572;
-
-            examCard.innerHTML = `
-
-                <div class="exam-card-header">
-                    <div class="exam-card-copy">
-                        <h2>${escapeHtml(examName)}</h2>
-
-                        <div class="exam-card-badges">
-                            <span>${escapeHtml(examName.toLowerCase().includes("parrot") ? "parrot" : "TOEIC")}</span>
-                            <span>${escapeHtml(year)}</span>
-                        </div>
-
-                        <div class="exam-card-meta">
-                            <span>📄 ${totalQuestions} đề</span>
-                            <span>👥 ${Number(attempts).toLocaleString("vi-VN")} lượt làm</span>
-                        </div>
-                    </div>
-                    </div>
-
-                    <div class="exam-card-icon" aria-hidden="true">▣</div>
-                </div>
-
-                <a href="exam.html?id=${exam.id}" class="exam-card-link">
-                    Vào luyện <span aria-hidden="true">→</span>
-                </a>
-
-            `;
-
-
-            examList.appendChild(examCard);
-
-        });
-
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-
-        showMessage(
-            "Không thể tải danh sách đề thi."
-        );
-
-
-        examList.innerHTML = `
-            <p>Đã xảy ra lỗi khi tải đề thi.</p>
-        `;
-
-    }
-
-}
+/* =========================
+   ESCAPE HTML
+========================= */
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -162,19 +46,211 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
+/* =========================
+   RENDER EXAM CARDS
+========================= */
 
-// Đăng xuất
+function renderExams(exams) {
+    if (!examList) return;
 
-logoutBtn.addEventListener("click", function () {
+    if (!exams || exams.length === 0) {
+        examList.innerHTML = `
+            <div class="empty-result">
+                <h3>Không tìm thấy đề thi phù hợp</h3>
+                <p>Vui lòng thử tìm kiếm với từ khóa khác hoặc bấm nút "Tất cả đề".</p>
+            </div>
+        `;
+        return;
+    }
 
-    localStorage.removeItem("toeicAccessToken");
-    localStorage.removeItem("username");
+    examList.innerHTML = "";
 
-    window.location.href = "login.html";
+    exams.forEach(exam => {
+        const examCard = document.createElement("div");
+        examCard.className = "exam-card";
 
-});
+        const examId = exam.id || "";
+        const title = exam.title || "Đề thi TOEIC";
+        const description = exam.description || "Bài thi kiểm tra năng lực tiếng Anh TOEIC chuẩn hóa.";
+        const duration = exam.durationMinutes ? `${exam.durationMinutes} phút` : "Chưa cập nhật";
+        const totalQuestions = exam.totalQuestions ? `${exam.totalQuestions} câu hỏi` : "Đầy đủ câu hỏi";
 
+        examCard.innerHTML = `
+            <div class="exam-card-header">
+                <div class="exam-card-icon" aria-hidden="true">📖</div>
 
-// Chạy khi mở trang
+                <div class="exam-card-copy">
+                    <h2>${escapeHtml(title)}</h2>
+
+                    <div class="exam-card-badges">
+                        <span>Đề thi TOEIC</span>
+                        <span>Đầy đủ phần thi</span>
+                    </div>
+
+                    <div class="exam-card-meta">
+                        <span>⏱ ${escapeHtml(duration)}</span>
+                        <span>📝 ${escapeHtml(totalQuestions)}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <p style="color: #64748b; font-size: 14px; margin-top: 14px; line-height: 1.5;">
+                    ${escapeHtml(description)}
+                </p>
+
+                ${examId ? `
+                    <a href="exam.html?id=${examId}" class="exam-card-link">
+                        Vào làm bài thi <span aria-hidden="true">→</span>
+                    </a>
+                ` : ""}
+            </div>
+        `;
+
+        examList.appendChild(examCard);
+    });
+}
+
+/* =========================
+   TẢI TẤT CẢ ĐỀ THI
+========================= */
+
+async function loadExams() {
+    try {
+        examList.innerHTML = `<p class="loading-text">Đang tải danh sách đề thi...</p>`;
+
+        const response = await fetch("/exams", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem("toeicAccessToken");
+                window.location.href = "login.html";
+                return;
+            }
+            throw new Error(`Lỗi máy chủ (${response.status})`);
+        }
+
+        const data = await response.json();
+        allExams = data.data || [];
+
+        renderExams(allExams);
+
+    } catch (error) {
+        console.error("Lỗi tải đề thi:", error);
+        if (examMessage) {
+            examMessage.textContent = "Không thể tải danh sách đề thi. Vui lòng thử lại sau.";
+        }
+        examList.innerHTML = `
+            <div class="empty-result">
+                <h3>Không thể tải đề thi</h3>
+                <p>${escapeHtml(error.message)}</p>
+            </div>
+        `;
+    }
+}
+
+/* =========================
+   TÌM KIẾM ĐỀ THI (GỌI API SEARCH UNSAFE ĐỂ BURP SUITE INTERCEPT)
+========================= */
+
+async function executeSearchUnsafe(keyword) {
+    if (!keyword) {
+        if (clearSearchBtn) clearSearchBtn.style.display = "none";
+        renderExams(allExams);
+        return;
+    }
+
+    try {
+        examList.innerHTML = `<p class="loading-text">Đang tìm kiếm...</p>`;
+
+        if (clearSearchBtn) {
+            clearSearchBtn.style.display = "inline-block";
+        }
+
+        // Gọi API searchUnsafe để Burp Suite có thể bắt và khai thác payload SQLi
+        const response = await fetch(`/api/exams/searchUnsafe?keyword=${encodeURIComponent(keyword)}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Lỗi phản hồi (${response.status})`);
+        }
+
+        const searchResults = await response.json(); // Mảng các { title: string }
+
+        if (!searchResults || searchResults.length === 0) {
+            examList.innerHTML = `
+                <div class="empty-result">
+                    <h3>Không tìm thấy đề thi phù hợp</h3>
+                    <p>Không có kết quả nào cho từ khóa: "<strong>${escapeHtml(keyword)}</strong>".</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Khớp kết quả trả về với danh sách đề thi hiện có
+        const matchedList = [];
+        searchResults.forEach(item => {
+            const returnedTitle = item.title ?? "";
+            const matchedExam = allExams.find(
+                e => e.title && e.title.trim().toLowerCase() === returnedTitle.trim().toLowerCase()
+            );
+
+            if (matchedExam) {
+                matchedList.push(matchedExam);
+            } else {
+                matchedList.push({
+                    title: returnedTitle,
+                    description: "Kết quả tìm kiếm",
+                    durationMinutes: null,
+                    totalQuestions: null
+                });
+            }
+        });
+
+        renderExams(matchedList);
+
+    } catch (err) {
+        console.error("Lỗi khi tìm kiếm:", err);
+        examList.innerHTML = `
+            <div class="empty-result">
+                <h3>Không thể hoàn tất tìm kiếm</h3>
+                <p>Đã xảy ra lỗi trong quá trình xử lý yêu cầu tìm kiếm.</p>
+            </div>
+        `;
+    }
+}
+
+/* =========================
+   SEARCH FORM EVENTS
+========================= */
+
+if (searchForm) {
+    searchForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const kw = searchInput ? searchInput.value.trim() : "";
+        executeSearchUnsafe(kw);
+    });
+}
+
+if (clearSearchBtn) {
+    clearSearchBtn.addEventListener("click", function () {
+        if (searchInput) searchInput.value = "";
+        clearSearchBtn.style.display = "none";
+        renderExams(allExams);
+    });
+}
+
+/* =========================
+   KHỞI TẠO
+========================= */
 
 loadExams();

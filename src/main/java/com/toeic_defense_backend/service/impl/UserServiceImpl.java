@@ -48,6 +48,9 @@ public class UserServiceImpl implements UserService {
 
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (user.getRole() == null || user.getRole().isBlank()) {
+            user.setRole("USER");
+        }
 
         return userRepository.save(user);
     }
@@ -78,8 +81,15 @@ public class UserServiceImpl implements UserService {
                     throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
                 });
 
-        userMapper.updateUser(user, request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setUsername(request.getUsername());
+
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        if (request.getRole() != null && !request.getRole().isBlank()) {
+            user.setRole(request.getRole());
+        }
 
         return userRepository.save(user);
     }

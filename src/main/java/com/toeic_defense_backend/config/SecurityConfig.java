@@ -50,6 +50,7 @@ public class SecurityConfig {
                 "/admin-results.js",
                 "/register.html",
                 "/register.js",
+                "/change-password.js",
 
                 "/style.css",
                 "/exam.html",
@@ -78,6 +79,7 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         HttpMethod.GET,
                                         "/exams/**",
+                                        "/api/exams/**",
                                         "/questions/**"
                                 )
                                 .authenticated()

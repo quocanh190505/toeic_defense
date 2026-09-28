@@ -25,9 +25,6 @@ import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
-
-
-
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -36,7 +33,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Value("${jwt.signerKey}")
     private String signerKey;
-
 
     @Override
     public LoginResponse loginUnsafe(LoginRequest request) {
@@ -88,25 +84,34 @@ public class AuthServiceImpl implements AuthService {
             Long authenticatedUserId,
             ChangePasswordSecureRequest request
     ) {
+        if (request == null || request.getNewPassword() == null || request.getNewPassword().trim().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
 
         User user = userRepository.findById(authenticatedUserId)
                 .orElseThrow(() ->
                         new AppException(ErrorCode.USER_NOT_FOUND)
                 );
 
-        if (!passwordEncoder.matches(
-                request.getOldPassword(),
-                user.getPassword()
-        )) {
+        boolean matches = false;
+        try {
+            matches = passwordEncoder.matches(
+                    request.getOldPassword(),
+                    user.getPassword()
+            );
+        } catch (Exception ignored) {}
+
+        if (!matches && !request.getOldPassword().equals(user.getPassword())) {
             throw new AppException(ErrorCode.INVALID_OLD_PASSWORD);
         }
 
         user.setPassword(
-                passwordEncoder.encode(request.getNewPassword())
+                passwordEncoder.encode(request.getNewPassword().trim())
         );
 
         userRepository.save(user);
     }
+
     private LoginResponse toLoginResponse(User user) {
         return LoginResponse.builder()
                 .token(generateToken(user))

@@ -2,117 +2,83 @@
 <html lang="vi">
 
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>TOEIC PTIT - Danh sách đề thi</title>
-
-    <link rel="stylesheet" href="style.css?v=4">
-
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
-
 
 <body class="home-page">
 
-
 <!-- HEADER -->
-
 <header class="header">
-
     <div class="navbar">
-
         <div class="brand">
-
             <h2>TOEIC PTIT</h2>
-
         </div>
-
 
         <nav class="nav-menu">
-
-            <a href="home.html">
-                Trang chủ
-            </a>
-
-            <a href="exams.html" class="active">
-                Đề thi
-            </a>
-
-            <a href="result.html">
-                Kết quả
-            </a>
-
-            <a href="admin.html">
-                Admin
-            </a>
-
+            <a href="home.html">Trang chủ</a>
+            <a href="exams.html" class="active">Đề thi</a>
+            <a href="result.html">Lịch sử làm bài</a>
+            <a href="admin.html">Admin</a>
         </nav>
 
-
         <div class="user-menu">
-
-            <span id="username">
-                Xin chào
-            </span>
-
-            <button id="logoutBtn">
-                Đăng xuất
-            </button>
-
+            <span id="username">Xin chào</span>
+            <button type="button" id="changePasswordBtn" class="change-pw-btn">🔑 Đổi mật khẩu</button>
+            <button id="logoutBtn">Đăng xuất</button>
         </div>
-
     </div>
-
 </header>
 
-
-
 <!-- MAIN -->
-
 <main class="exam-container">
 
-    <h1>Danh sách đề thi TOEIC</h1>
-
-
-    <!-- Thông báo -->
-
-    <div id="examMessage"></div>
-
-
-    <!-- Danh sách đề thi -->
-
-    <div
-        id="examList"
-        class="exam-grid"
-    >
-
-        <p>
-            Đang tải danh sách đề thi...
-        </p>
-
+    <div class="exam-page-header">
+        <h1>Danh sách đề thi TOEIC</h1>
+        <p class="exam-subtitle">Luyện tập các bộ đề thi thử TOEIC với đầy đủ câu hỏi và đánh giá kết quả.</p>
     </div>
 
+    <!-- KHUNG TÌM KIẾM ĐỀ THI BÌNH THƯỜNG -->
+    <section class="search-section">
+        <form id="searchForm" class="search-bar-form">
+            <div class="search-input-group">
+                <span class="search-icon" aria-hidden="true">🔍</span>
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Tìm kiếm đề thi..."
+                    autocomplete="off"
+                >
+            </div>
+            <button type="submit" id="searchBtn" class="search-submit-button">
+                🔍 Tìm kiếm
+            </button>
+            <button type="button" id="clearSearchBtn" class="search-reset-button" style="display: none;">
+                Tất cả đề
+            </button>
+        </form>
+
+        <div id="searchNotice" class="search-notice" style="display: none;"></div>
+    </section>
+
+    <!-- Thông báo chung -->
+    <div id="examMessage" class="auth-message"></div>
+
+    <!-- Danh sách đề thi -->
+    <div id="examList" class="exam-grid">
+        <p>Đang tải danh sách đề thi...</p>
+    </div>
 
 </main>
 
-
-
 <!-- FOOTER -->
-
 <footer>
-
-    <p>
-        © 2026 TOEIC PTIT - Hệ thống luyện thi TOEIC
-    </p>
-
+    <p>© 2026 TOEIC PTIT - Hệ thống luyện thi TOEIC</p>
 </footer>
 
-
-
-<script src="exams.js?v=3"></script>
-
+<script src="exams.js?v=11"></script>
+<script src="change-password.js?v=11"></script>
 </body>
-
 </html>

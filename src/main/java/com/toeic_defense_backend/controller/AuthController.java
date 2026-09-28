@@ -37,20 +37,12 @@ public class AuthController {
     public ResponseEntity<ApiResponse<RegisterResponse>> register(
             @RequestBody @Valid RegisterRequest request
     ) {
-        User user = userService.register(request);
-
-        RegisterResponse registerResponse = RegisterResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .build();
-
         ApiResponse<RegisterResponse> apiResponse = ApiResponse.<RegisterResponse>builder()
-                .data(registerResponse)
-                .status(HttpStatus.OK.value())
-                .message("Register successfully")
+                .status(HttpStatus.FORBIDDEN.value())
+                .message("Đăng ký công khai đã bị khóa. Hệ thống nội bộ chỉ dành cho học viên có sẵn tài khoản.")
                 .build();
 
-        return ResponseEntity.ok(apiResponse);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponse);
     }
 
     @PostMapping("/loginUnsafe")
@@ -90,7 +82,7 @@ public class AuthController {
     }
 
     @PutMapping("/changePasswordSecure")
-    public String changePasswordSecure(
+    public ResponseEntity<ApiResponse<String>> changePasswordSecure(
             @RequestBody ChangePasswordSecureRequest request,
             Authentication authentication
     ) {
@@ -102,6 +94,12 @@ public class AuthController {
                 request
         );
 
-        return "Change password successfully";
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .status(HttpStatus.OK.value())
+                .message("Đổi mật khẩu thành công")
+                .data("Change password successfully")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
     }
 }
