@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ cá nhân - TOEIC PTIT</title>
+    <link rel="stylesheet" href="style.css?v=19">
+</head>
+<body class="result-page">
+<header class="main-header">
+    <div class="result-navbar">
+        <a href="home.html" class="brand">TOEIC PTIT</a>
+        <nav>
+            <a href="home.html">Trang chủ</a>
+            <a href="exams.html">Đề thi</a>
+            <a href="result.html">Lịch sử làm bài</a>
+            <a href="profile.html" class="active">Hồ sơ cá nhân</a>
+            <span id="navUsername" style="color:#fff;font-weight:600;font-size:14px;margin-left:6px"></span>
+            <button type="button" id="changePasswordBtn" class="change-pw-btn">🔑 Đổi mật khẩu</button>
+            <a href="#" id="logoutButton" class="logout-link">Đăng xuất</a>
+        </nav>
+    </div>
+</header>
+
+<main class="profile-container">
+    <div class="profile-header">
+        <div class="profile-avatar-placeholder">
+            <span id="avatarLetter">👤</span>
+        </div>
+        <div class="profile-title-area">
+            <h1>Hồ sơ cá nhân</h1>
+            <p>Quản lý thông tin tài khoản và cá nhân của bạn</p>
+        </div>
+    </div>
+
+    <div class="profile-grid">
+        <!-- Account Info Card (Username/Role) -->
+        <section class="profile-card account-card">
+            <div class="card-header">
+                <h2>Thông tin tài khoản</h2>
+            </div>
+            <div class="card-body">
+                <div class="info-row" style="flex-direction: column; align-items: center; text-align: center; border-bottom: none; padding-bottom: 5px;">
+                    <div style="display: none;" id="currentRole"></div>
+                    <div class="info-group" style="width: 100%;">
+                        <label style="font-size: 14px;">Tên đăng nhập hiện tại</label>
+                        <div class="username-display" id="currentUsername" style="font-size: 24px; color: #1e3c72; margin-top: 4px;">Đang tải…</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 10px;">
+                    <button type="button" class="btn-save" style="flex:1; background:#1e3c72; font-size:14px; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="document.getElementById('changeUsernameModal').hidden = false; document.body.classList.add('modal-open'); setTimeout(()=>document.getElementById('usernameInput').focus(),100);">👤 Thay đổi tài khoản</button>
+                    <button type="button" class="btn-save" style="flex:1; background: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; font-size:14px; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="document.getElementById('changePasswordBtn').click()">🔑 Thay đổi mật khẩu</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Personal Details Card -->
+        <section class="profile-card details-card">
+            <div class="card-header">
+                <h2>Thông tin liên hệ</h2>
+            </div>
+            <div class="card-body">
+                <form id="personalDetailsForm" class="modern-form">
+                    <div class="form-group-modern">
+                        <label for="fullNameInput">Họ và tên</label>
+                        <input id="fullNameInput" name="fullName" maxlength="120" required autocomplete="name" placeholder="Ví dụ: Nguyễn Văn A">
+                    </div>
+                    
+                    <div class="form-group-modern">
+                        <label for="emailInput">Địa chỉ Email</label>
+                        <input id="emailInput" name="email" type="email" maxlength="180" autocomplete="email" placeholder="Ví dụ: example@gmail.com">
+                    </div>
+                    
+                    <div class="form-group-modern">
+                        <label for="phoneInput">Số điện thoại</label>
+                        <input id="phoneInput" name="phone" type="tel" maxlength="30" autocomplete="tel" placeholder="Ví dụ: 0987654321">
+                    </div>
+
+                    <button type="submit" class="btn-save">Cập nhật thông tin</button>
+                    <p id="personalDetailsMessage" class="form-message" role="status" aria-live="polite"></p>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+
+<!-- MODAL THAY ĐỔI TÊN ĐĂNG NHẬP -->
+<div id="changeUsernameModal" class="score-modal" hidden>
+    <div class="score-modal-card edit-modal-card">
+        <h2>👤 Đổi tên đăng nhập</h2>
+        <p style="color: #64748b; font-size: 14px; margin-top: 6px;">
+            Cập nhật tên đăng nhập mới.
+        </p>
+        <form id="profileForm" style="margin-top: 20px; text-align: left;" class="modern-form">
+            <div class="form-group">
+                <label for="usernameInput" style="font-weight:bold; font-size:14px; display:block; margin-bottom:8px">Tên đăng nhập mới</label>
+                <input id="usernameInput" name="username" maxlength="50" minlength="3" autocomplete="username" required placeholder="Nhập tên đăng nhập mới..." style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px;">
+            </div>
+            <p id="profileMessage" class="auth-message" style="margin-top: 16px; min-height: 20px; font-weight:600; color:#10b981; text-align:center"></p>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn-save" style="flex: 1; background:#1e3c72; padding:12px; color:white; border:none; border-radius:8px; font-weight:bold">Lưu thay đổi</button>
+                <button type="button" onclick="document.getElementById('changeUsernameModal').hidden = true; document.body.classList.remove('modal-open')" class="btn-save" style="width: auto; background: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; padding:12px 20px; border-radius:8px; font-weight:bold">Thoát</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+
+<script src="profile.js?v=19"></script>
+<script src="change-password.js?v=19"></script>
+<script>
+    // Just a small helper to set the avatar letter based on username later if needed
+    setTimeout(() => {
+        const username = document.getElementById('currentUsername').textContent;
+        if(username && username !== 'Đang tải…') {
+            document.getElementById('avatarLetter').textContent = username.charAt(0).toUpperCase();
+        }
+    }, 1500);
+</script>
+
+</body>
+</html>
