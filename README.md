@@ -131,46 +131,62 @@ Started ToeicDefenseBackendApplication in ... seconds
 
 #### 1. Lỗ hổng (Unsafe Endpoint):
 - **Endpoint:** `POST /api/auth/loginUnsafe`
-- **Cơ chế lỗi trong code:** Câu truy vấn SQL được tạo bằng cách cộng chuỗi trực tiếp từ input người dùng:
+- **Cơ chế lỗi trong code:** Câu truy vấn SQL được tạo bằng cách cộng chuỗi trực tiếp từ input username:
   ```java
-  String sql = "SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'";
+  String sql = "SELECT * FROM users WHERE username = '" + username + "' AND role = 'USER'";
   ```
 - **Khai thác (Attack Payload):**
-  - Gửi body JSON:
+  - Kẻ tấn công có thể đăng nhập vào bất kỳ tài khoản học viên nào (VD: `student1`) mà không cần mật khẩu.
+  - Gửi body JSON với payload loại bỏ phần kiểm tra phía sau bằng ký tự comment (`-- ` hoặc `#`):
     ```json
     {
-      "username": "admin' OR '1'='1",
-      "password": "anything"
+      "username": "student1' -- ",
+      "password": "any_password"
     }
     ```
-  - Hoặc bypass bằng ký tự comment SQL:
+  - Hoặc payload luôn đúng để lấy tài khoản người dùng đầu tiên:
     ```json
     {
-      "username": "admin' -- ",
-      "password": ""
+      "username": "xyz' OR '1'='1",
+      "password": "any_password"
     }
     ```
-- **Kết quả trước khi khắc phục:** Câu lệnh trở thành `WHERE username = 'admin' OR '1'='1' ...`, luôn trả về bản ghi hợp lệ. Kẻ tấn công đăng nhập thành công vào tài khoản `admin` mà **không cần biết mật khẩu**, máy chủ cấp JWT Token với quyền quản trị viên.
+- **Kết quả trước khi khắc phục:** 
+  - Tại payload thứ nhất, câu lệnh trở thành `WHERE username = 'student1' -- ' AND role = 'USER'`. Hệ thống bỏ qua phần điều kiện phía sau và so khớp mật khẩu cũng bị bỏ qua hoàn toàn.
+  - Kẻ tấn công đăng nhập thành công vào tài khoản `student1` mà **không cần biết mật khẩu**, máy chủ cấp JWT Token với quyền học viên (`USER`). (Lưu ý: Backend có code chặn cứng việc login bằng `ADMIN` qua cổng này, tạo tiền đề cho bài Lab Leo thang đặc quyền).
 
 #### 2. Giải pháp khắc phục (Secure Implementation):
 - **Endpoint an toàn:** `POST /api/auth/loginSecure`
 - **Cơ chế phòng thủ:**
-  1. Sử dụng Spring Data JPA Repository (`userRepository.findByUsername(username)`) thực thi câu truy vấn qua **PreparedStatement** (tham số hóa Parameter Binding). Input người dùng được xử lý thuần túy là dữ liệu chuỗi (literal data), không thể làm thay đổi cấu trúc cú pháp của lệnh SQL.
-  2. Mật khẩu không bao giờ so sánh chuỗi trần trong SQL mà được băm bằng thuật toán một chiều an toàn:
-     ```java
-     passwordEncoder.matches(request.getPassword(), user.getPassword())
-     ```
-  3. Mọi payload SQL Injection đưa vào đều bị coi là username không tồn tại, trả về `401 Unauthorized` hoặc `400 Bad Request`.
+  1. Sử dụng Spring Data JPA Repository (`userRepository.findByUsername(username)`) thực thi câu truy vấn qua **PreparedStatement** (tham số hóa Parameter Binding). Câu truy vấn không thể bị bẻ cong.
+  2. Mật khẩu được băm (BCrypt) và kiểm định nghiêm ngặt qua `passwordEncoder.matches()`. Mọi nỗ lực SQLi đều bị từ chối trả về `401 Unauthorized`.
 
 ---
 
-### 🔴 DEMO: Leo thang đặc quyền qua Mass Assignment
+### 🔴 DEMO 2: Leo thang đặc quyền qua Mass Assignment (Privilege Escalation)
 
-- Giao diện `profile.html` chỉ gửi `username`; form không hiển thị trường `role`.
-- API thường `PUT /users/me` dùng DTO chỉ có `username` và bỏ qua trường lạ. Endpoint `PUT /users/me/lab-vulnerable` nhận DTO lab có `role` và service áp dụng trường này. Cả hai lấy danh tính tài khoản từ JWT; request không thể chọn userId.
-- Thực hành trong ứng dụng lab chạy cục bộ: đăng nhập `student1`, đổi tên/lưu hồ sơ để bắt request API, gửi sang Repeater, đổi URL thành `/users/me/lab-vulnerable` rồi thêm `"role":"ADMIN"` vào JSON. Nếu role được đổi, đăng nhập lại để nhận JWT mới và kiểm tra quyền quản trị.
-- Bản lab này cố ý giữ lỗi để học và thử nghiệm trong phạm vi project cục bộ. Khi triển khai thực tế, xóa `role` khỏi DTO và chỉ thay đổi role trong endpoint quản trị có phân quyền.
-### 🔴 DEMO 2: SQL Injection Search & MySQL Database Fingerprinting
+#### 1. Nguyên lý lỗ hổng:
+Hệ thống có API bảo vệ an toàn `PUT /users/me`, tuy nhiên có để lọt một endpoint phục vụ kiểm thử là `PUT /users/me/lab-vulnerable`. Model dữ liệu (DTO) của endpoint này nhận ánh xạ trường `role` tự do từ JSON payload trực tiếp vào Object User. Bằng kỹ thuật Mass Assignment, học viên (USER) có thể tự phong mình làm ADMIN.
+
+#### 2. Trình tự các bước thực hành khai thác bằng Burp Suite:
+- **Bước 1 (Đăng nhập):** Sử dụng tài khoản `student1` / `123456` (hoặc khai thác từ lỗ hổng DEMO 1) để lấy token đăng nhập hợp lệ.
+- **Bước 2 (Chặn bắt request):** Mở giao diện "Hồ sơ cá nhân", bật tính năng **Intercept is ON** trên Burp Suite. Ấn nút "👤 Thay đổi tài khoản" và tiến hành lưu thay đổi tên đăng nhập.
+- **Bước 3 (Chỉnh sửa HTTP Request):** 
+  - Đẩy request vừa chặn được sang công cụ **Repeater** (Ctrl + R).
+  - Thay đổi đường dẫn endpoint từ `PUT /users/me` thành `PUT /users/me/lab-vulnerable`.
+  - Trong body JSON của request, bổ sung trường `"role"`:
+    ```json
+    {
+      "username": "student1_hacked",
+      "role": "ADMIN"
+    }
+    ```
+- **Bước 4 (Tiến hành khai thác):** Nhấn Send. Trả về `200 OK` cho thấy hồ sơ được cập nhật thành công xuống Database.
+- **Bước 5 (Kiểm chứng quyền lực):** Đăng xuất và đăng nhập lại bằng tên đăng nhập mới (`student1_hacked`). Lúc này, tài khoản của bạn đã được gắn Role **ADMIN**. Bạn ngay lập tức có quyền truy cập vào thanh Menu "Admin" và quản lý toàn bộ hệ thống!
+
+#### 3. Giải pháp khắc phục:
+Trong API thực tế (`/users/me`), sử dụng DTO khắt khe (`SafeProfileUpdateRequest`) loại bỏ hoàn toàn trường `role`. Tuyệt đối không cho map trường chứa quyền từ Request của người dùng vào Entity.
+### 🔴 DEMO 3: SQL Injection Search & MySQL Database Fingerprinting
 
 #### 1. Lỗ hổng & Khai thác Fingerprint (Unsafe Endpoint):
 - **Endpoint:** `GET /api/exams/searchUnsafe?keyword={payload}`
@@ -220,7 +236,7 @@ curl -X GET "http://localhost:8090/api/exams/searchUnsafe?keyword=%27%20UNION%20
 
 ---
 
-### 🔴 DEMO 3: Cơ chế bảo mật MySQL Least Privilege & User Separation
+### 🔴 DEMO 4: Cơ chế bảo mật MySQL Least Privilege & User Separation
 
 Một trong những sai lầm bảo mật phổ biến nhất là để ứng dụng web kết nối CSDL bằng tài khoản `root`. Nếu bị SQL Injection, kẻ tấn công có toàn quyền đọc ghi file, drop database hoặc chiếm quyền server.
 
@@ -246,6 +262,24 @@ FLUSH PRIVILEGES;
   ERROR 1142 (42000): DROP command denied to user 'toeic_app'@'localhost' for table 'users'
   ```
 - Không thể sử dụng các hàm nguy hiểm như `LOAD_FILE()` hoặc `INTO OUTFILE` để trích xuất file nhạy cảm `/etc/passwd` hay ghi Web Shell.
+
+### 🔴 DEMO 5: Tái hiện lỗ hổng cơ sở dữ liệu CVE-2012-2122 (MySQL Authentication Bypass)
+
+#### 1. Giới thiệu CVE-2012-2122
+Trong giai đoạn năm 2012, các nhánh phiên bản MySQL (điển hình như 5.1.61, 5.5.22) được biên dịch trên môi trường nhân Linux với hàm `memcmp()` trả về giá trị vượt quá phạm vi [-128, 127], dẫn đến việc hàm so sánh mật khẩu vô tình đánh giá là khớp ở tỷ lệ `1/256`. 
+Tin tặc có thể đăng nhập vào **root** của CSDL bằng một mật khẩu sai mà không cần tốn quá nhiều sức.
+
+#### 2. Trình tự tiến hành kiểm thử thực nghiệm:
+- **Bước 1 (Dựng môi trường dễ bị tấn công):** Đảm bảo bạn đang cài đặt và chạy container MySQL/MariaDB thuộc các bản Build lỗi (ví dụ MariaDB 5.2.11 hoặc MySQL 5.5.23 Ubuntu compiled).
+- **Bước 2 (Chạy kịch bản Bruteforce One-Liner):** 
+  Mở Bash shell hoặc Terminal Linux để thực hiện đánh bom liên tục vào MySQL Server cục bộ bằng một mật khẩu sai (VD: `wrong_pass`). Chạy vòng lặp lệnh:
+  ```bash
+  for i in $(seq 1 300); do 
+      mysql -u root -p'wrong_pass' -h 127.0.0.1 -e 'SELECT USER(), VERSION();' && echo "Bypass Success!" && break
+  done
+  ```
+- **Bước 3 (Quan sát kết quả):** Hệ thống sẽ trả về lỗi `Access denied` liên tục. Tuy nhiên trung bình khoảng 256 lần thử (~ tích tắc), lệnh sẽ chen ngang thành công và trả về bảng `USER() - VERSION()` với dòng "Bypass Success!".
+- **Bước 4 (Kết luận & Khắc phục):** Nắm quyền truy cập ROOT dễ dàng mà không tốn tài nguyên dò mật khẩu. Khắc phục duy nhất là luôn nâng cấp cấu hình máy chủ MySQL lên phiên bản vá lỗi (>= 5.5.24 hoặc 8.x LTS hiện nay như TOEIC Defense đang cấu hình).
 
 ---
 
