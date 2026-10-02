@@ -53,10 +53,11 @@ function renderResults(data) {
         const correct = item.correctCount ?? 0;
         const percentage = total ? Math.round((correct / total) * 100) : 0;
         const username = item.username || `User ${item.userId ?? "--"}`;
+        const examName = item.examTitle || `Đề ${item.examId ?? "--"}`;
 
         return `
             <article class="result-card">
-                <h2>${escapeHtml(item.examTitle || `Đề ${item.examId ?? "--"}`)}</h2>
+                <h2>${escapeHtml(examName)}</h2>
                 <div class="result-status completed">Hoàn thành</div>
                 <p><strong>Tài khoản:</strong> ${escapeHtml(username)}</p>
                 <div class="score-box">
@@ -76,10 +77,43 @@ function renderResults(data) {
                     <p><span>SỐ CÂU HỎI</span><strong>${total}</strong></p>
                     <p><span>TRẢ LỜI ĐÚNG</span><strong>${correct}</strong></p>
                 </div>
+                <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end;">
+                    <button
+                        type="button"
+                        class="filter-button"
+                        style="background-color: #2563eb; color: white; padding: 8px 16px; font-size: 13px; border-radius: 6px; cursor: pointer; border: none; font-weight: 600;"
+                        onclick="allowRetake(${item.id}, '${escapeHtml(username)}', '${escapeHtml(examName)}')"
+                    >
+                        🔄 Cho phép làm lại (Reset kết quả)
+                    </button>
+                </div>
             </article>
         `;
     }).join("");
 }
+
+window.allowRetake = async function(resultId, username, examTitle) {
+    if (!window.confirm(`Bạn có chắc chắn muốn cấp quyền làm lại cho học viên "${username}" đối với bài thi "${examTitle}"?\n(Kết quả làm bài lần trước sẽ được xóa để học viên làm lại từ đầu)`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/exam-results/${resultId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err || `Lỗi máy chủ (${response.status})`);
+        }
+
+        showMessage(`Đã cấp quyền làm lại cho học viên "${username}" thành công!`, "success");
+        await loadResults();
+    } catch (err) {
+        showMessage(`Lỗi: ${err.message}`, "error");
+    }
+};
 
 function renderFilters() {
     const exams = new Map();

@@ -1,6 +1,7 @@
 package com.toeic_defense_backend.service.impl;
 
 import com.toeic_defense_backend.dto.request.ProfileCreationRequest;
+import com.toeic_defense_backend.dto.request.PersonalProfileUpdateRequest;
 import com.toeic_defense_backend.entity.Profile;
 import com.toeic_defense_backend.entity.User;
 import com.toeic_defense_backend.exception.AppException;
@@ -76,6 +77,26 @@ public class ProfileServiceImpl implements ProfileService {
         profileMapper.updateProfile(profile, request);
         profile.setUser(user);
 
+        return profileRepository.save(profile);
+    }
+
+    @Override
+    public Profile getOrCreateOwnProfile(Long authenticatedUserId) {
+        return profileRepository.findByUserId(authenticatedUserId).orElseGet(() -> {
+            User user = getUser(authenticatedUserId);
+            return profileRepository.save(Profile.builder()
+                    .fullName(user.getUsername())
+                    .user(user)
+                    .build());
+        });
+    }
+
+    @Override
+    public Profile updateOwnProfile(Long authenticatedUserId, PersonalProfileUpdateRequest request) {
+        Profile profile = getOrCreateOwnProfile(authenticatedUserId);
+        profile.setFullName(request.getFullName().trim());
+        profile.setEmail(request.getEmail() == null || request.getEmail().isBlank() ? null : request.getEmail().trim());
+        profile.setPhone(request.getPhone() == null || request.getPhone().isBlank() ? null : request.getPhone().trim());
         return profileRepository.save(profile);
     }
 

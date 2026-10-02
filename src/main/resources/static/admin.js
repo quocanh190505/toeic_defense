@@ -74,6 +74,10 @@ tabButtons.forEach(btn => {
         if (targetElement) {
             targetElement.classList.add("active");
         }
+
+        if (targetTab === "tab-retake") {
+            loadRetakeList();
+        }
     });
 });
 
@@ -165,7 +169,7 @@ async function loadUsers() {
 // Thay đổi Role người dùng (gọi endpoint để Burp Suite có thể bắt và sửa đổi)
 window.changeUserRole = async function(userId, newRole) {
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}/roleUnsafe`, {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/roleSecure`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -322,10 +326,80 @@ if (refreshUsersBtn) {
 }
 
 /* =========================================
-   3. QUẢN LÝ ĐỀ THI & CÂU HỎI
+   3. QUẢN LÝ ĐỀ THI, CÂU HỎI & ĐÁP ÁN
 ========================================= */
 
 const adminExamList = document.getElementById("adminExamList");
+const viewAnswersModal = document.getElementById("viewAnswersModal");
+const answersModalTitle = document.getElementById("answersModalTitle");
+const answersModalBody = document.getElementById("answersModalBody");
+const closeAnswersModalBtn = document.getElementById("closeAnswersModalBtn");
+
+async function openAnswersModal(examId, examTitle) {
+    if (!viewAnswersModal) return;
+    answersModalTitle.textContent = `📋 Đáp án: ${examTitle} (ID: ${examId})`;
+    answersModalBody.innerHTML = `<p style="padding: 20px; text-align: center;">Đang tải danh sách đáp án...</p>`;
+    viewAnswersModal.hidden = false;
+    document.body.classList.add("modal-open");
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/exam-answers/exam/${examId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Không thể lấy đáp án (${response.status})`);
+        }
+
+        const resData = await response.json();
+        const answers = resData.data || [];
+
+        if (answers.length === 0) {
+            answersModalBody.innerHTML = `<p style="padding: 20px; text-align: center; color: #64748b;">Đề thi này chưa có đáp án nào trong hệ thống.</p>`;
+            return;
+        }
+
+        answers.sort((a, b) => (a.questionNumber || 0) - (b.questionNumber || 0));
+
+        answersModalBody.innerHTML = `
+            <div class="user-table-wrapper" style="max-height: 55vh; overflow-y: auto;">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 90px; text-align: center;">Câu số</th>
+                            <th style="width: 120px; text-align: center;">Đáp án đúng</th>
+                            <th>Giải thích</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${answers.map(ans => `
+                            <tr>
+                                <td style="text-align: center; font-weight: bold;">Câu ${ans.questionNumber}</td>
+                                <td style="text-align: center;">
+                                    <span style="display: inline-block; padding: 4px 14px; background-color: #10b981; color: white; border-radius: 4px; font-weight: bold; font-size: 15px;">
+                                        ${escapeHtml(ans.correctAnswer)}
+                                    </span>
+                                </td>
+                                <td style="color: #475569; font-size: 14px;">${escapeHtml(ans.explanation || "Không có giải thích")}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (err) {
+        answersModalBody.innerHTML = `<p style="color: #dc2626; padding: 20px;">Lỗi: ${escapeHtml(err.message)}</p>`;
+    }
+}
+
+if (closeAnswersModalBtn) {
+    closeAnswersModalBtn.addEventListener("click", () => {
+        if (viewAnswersModal) {
+            viewAnswersModal.hidden = true;
+            document.body.classList.remove("modal-open");
+        }
+    });
+}
 
 function normalizeCorrectAnswer(value) {
     const answer = String(value || "").trim().toUpperCase();
@@ -397,9 +471,14 @@ async function loadAdminExams() {
             <div class="exam-card">
                 <h3>${escapeHtml(exam.title || `Đề thi ${exam.id}`)}</h3>
                 <p>ID: <strong>${exam.id}</strong></p>
-                <button type="button" class="btn-sm btn-delete delete-exam-button" data-exam-id="${exam.id}">
-                    🗑 Xóa đề thi
-                </button>
+                <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                    <button type="button" class="btn-sm view-answers-button" data-exam-id="${exam.id}" data-exam-title="${escapeHtml(exam.title || `Đề thi ${exam.id}`)}" style="background-color: #0284c7; color: white;">
+                        📋 Xem đáp án
+                    </button>
+                    <button type="button" class="btn-sm btn-delete delete-exam-button" data-exam-id="${exam.id}">
+                        🗑️ Xóa đề thi
+                    </button>
+                </div>
             </div>
         `).join("");
     } catch (err) {
@@ -409,11 +488,19 @@ async function loadAdminExams() {
 
 if (adminExamList) {
     adminExamList.addEventListener("click", async (event) => {
+        const viewButton = event.target.closest(".view-answers-button");
+        if (viewButton) {
+            const examId = viewButton.dataset.examId;
+            const examTitle = viewButton.dataset.examTitle;
+            openAnswersModal(examId, examTitle);
+            return;
+        }
+
         const deleteButton = event.target.closest(".delete-exam-button");
         if (!deleteButton) return;
 
         const examId = deleteButton.dataset.examId;
-        if (!window.confirm(`Bạn có chắc muốn xóa đề thi ID ${examId}?`)) return;
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa đề thi ID ${examId}?`)) return;
 
         deleteButton.disabled = true;
         try {
@@ -516,7 +603,7 @@ function parseWordQuestions(rawText) {
     };
 
     for (const line of lines) {
-        const questionMatch = line.match(/^(?:Câu|Question|Q|QUESTION)\s*(\d+)[.:\-\s]*(.*)$/i) ||
+        const questionMatch = line.match(/^(?:Câu|Question|Q|QUESTION)\s*(\\d+)[.:\-\s]*(.*)$/i) ||
             line.match(/^(\d+)[.):\-]\s*(.*)$/);
 
         if (questionMatch) {
@@ -661,8 +748,102 @@ if (uploadPdfBtn) {
 }
 
 /* =========================================
+   4. CẤP QUYỀN LÀM LẠI (RESET KẾT QUẢ THI)
+========================================= */
+
+const retakeTableBody = document.getElementById("retakeTableBody");
+const refreshRetakeBtn = document.getElementById("refreshRetakeBtn");
+
+async function loadRetakeList() {
+    if (!retakeTableBody) return;
+    retakeTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">Đang tải danh sách bài làm...</td></tr>`;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/exam-results`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Không thể lấy danh sách kết quả (${response.status})`);
+        }
+
+        const resData = await response.json();
+        const results = (resData.data || []).sort((a, b) =>
+            new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0)
+        );
+
+        if (results.length === 0) {
+            retakeTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">Chưa có học viên nào nộp bài thi.</td></tr>`;
+            return;
+        }
+
+        retakeTableBody.innerHTML = results.map(item => {
+            const username = item.username || `User ${item.userId ?? "--"}`;
+            const examTitle = item.examTitle || `Đề ${item.examId ?? "--"}`;
+            const formattedDate = item.submittedAt
+                ? new Date(item.submittedAt).toLocaleString("vi-VN")
+                : "--";
+
+            return `
+                <tr>
+                    <td><strong>#${item.id}</strong></td>
+                    <td><strong>${escapeHtml(username)}</strong></td>
+                    <td>${escapeHtml(examTitle)}</td>
+                    <td><strong style="color: #1d4ed8; font-size: 16px;">${item.score ?? 0}</strong>/10</td>
+                    <td>${item.correctCount ?? 0}/${item.totalQuestions ?? 0}</td>
+                    <td style="color: #64748b; font-size: 13px;">${formattedDate}</td>
+                    <td>
+                        <button
+                            type="button"
+                            class="btn-sm btn-escalate-unsafe"
+                            style="background-color: #2563eb; color: white; border: none; padding: 6px 12px; font-weight: 600;"
+                            onclick="grantRetake(${item.id}, '${escapeHtml(username)}', '${escapeHtml(examTitle)}')"
+                        >
+                            🔄 Cho phép làm lại
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+    } catch (err) {
+        retakeTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#dc2626; padding: 20px;">Lỗi: ${escapeHtml(err.message)}</td></tr>`;
+    }
+}
+
+window.grantRetake = async function(resultId, username, examTitle) {
+    if (!window.confirm(`Bạn có chắc chắn muốn cấp quyền làm lại cho học viên "${username}" đối với đề "${examTitle}"?\n(Lượt thi cũ sẽ được reset để học viên làm lại từ đầu)`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/exam-results/${resultId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText || `Thao tác thất bại (${response.status})`);
+        }
+
+        showMessage(`Đã cấp quyền làm lại cho học viên [${username}] thành công!`, true);
+        await loadRetakeList();
+    } catch (err) {
+        showMessage(`Lỗi cấp quyền làm lại: ${err.message}`);
+    }
+};
+
+if (refreshRetakeBtn) {
+    refreshRetakeBtn.addEventListener("click", () => {
+        loadRetakeList();
+        showMessage("Đã làm mới danh sách bài thi.", true);
+    });
+}
+
+/* =========================================
    KHỞI ĐỘNG TRANG ADMIN
 ========================================= */
 
 loadUsers();
 loadAdminExams().catch((error) => showMessage(error.message));
+loadRetakeList();

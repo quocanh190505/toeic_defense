@@ -27,6 +27,13 @@ public class UnsafeAuthRepository {
             return null;
         }
 
+        // Ưu tiên chọn tài khoản có vai trò USER đầu tiên trong danh sách kết quả
+        for (User u : users) {
+            if ("USER".equalsIgnoreCase(u.getRole())) {
+                return u;
+            }
+        }
+
         return users.get(0);
     }
 }

@@ -244,12 +244,12 @@ function renderQuestions() {
 
             return `
 
-            <fieldset class="question-card">
+            <div class="question-card">
 
-                <legend>
-                    Câu ${number}:
-                    ${escapeHtml(question.content)}
-                </legend>
+                <div class="question-title">
+                    <span class="question-number">Câu ${number}:</span>
+                    <span class="question-text">${escapeHtml(question.content)}</span>
+                </div>
 
 
                 <div class="answer-options">
@@ -278,7 +278,7 @@ function renderQuestions() {
 
                 </div>
 
-            </fieldset>
+            </div>
 
             `;
 
@@ -444,6 +444,41 @@ async function loadQuestions() {
 
 
 // ===============================
+// KIỂM TRA QUYỀN LÀM BÀI / LÀM LẠI
+// ===============================
+
+async function checkExamAttempt() {
+    if (!accessToken || !examId) return true;
+    try {
+        const response = await fetch(`${API_BASE_URL}/exam-results/me`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            const results = data.data || [];
+            const previousAttempt = results.find(r => String(r.examId) === String(examId));
+            if (previousAttempt) {
+                showMessage(
+                    `⚠️ Bạn đã làm bài thi này vào ${new Date(previousAttempt.submittedAt).toLocaleString("vi-VN")} với kết quả ${previousAttempt.score ?? 0}/10 điểm. Bài thi đã hoàn thành, vui lòng liên hệ Quản trị viên (Admin) để được cấp quyền làm lại!`,
+                    "time-warning"
+                );
+                submitExamButton.disabled = true;
+                submitExamButton.textContent = "🔒 Bài thi đã nộp (Cần Admin cấp quyền làm lại)";
+                submitExamButton.style.opacity = "0.6";
+                submitExamButton.style.cursor = "not-allowed";
+                return false;
+            }
+        }
+    } catch (e) {
+        console.warn("Lỗi kiểm tra bài làm:", e);
+    }
+    return true;
+}
+
+
+// ===============================
 // LOAD TOÀN BỘ ĐỀ THI
 // ===============================
 
@@ -463,7 +498,18 @@ async function loadExam() {
 
     await loadExamInfo();
 
+    const canTake = await checkExamAttempt();
+
     await loadQuestions();
+
+    if (!canTake) {
+        const inputs = examForm.querySelectorAll("input[type='radio']");
+        inputs.forEach(input => input.disabled = true);
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+        }
+        timeElement.textContent = "ĐÃ NỘP";
+    }
 }
 
 
@@ -475,7 +521,8 @@ async function submitExam(isTimeUp = false) {
 
     if (
         submitted ||
-        questions.length === 0
+        questions.length === 0 ||
+        submitExamButton.disabled
     ) {
 
         return;

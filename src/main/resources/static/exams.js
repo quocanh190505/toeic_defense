@@ -4,6 +4,11 @@ if (!accessToken) {
     window.location.href = "login.html";
 }
 
+let tokenPayload = {};
+try {
+    tokenPayload = JSON.parse(atob(accessToken.split(".")[1]));
+} catch (_) {}
+
 const examList = document.getElementById("examList");
 const examMessage = document.getElementById("examMessage");
 const usernameElement = document.getElementById("username");
@@ -20,15 +25,19 @@ let allExams = [];
    USER INFO & LOGOUT
 ========================= */
 
-const savedUsername = localStorage.getItem("username");
-if (usernameElement && savedUsername) {
-    usernameElement.textContent = `Xin chào, ${savedUsername}`;
+const savedUsername = localStorage.getItem("username") || tokenPayload.username || "User";
+const role = localStorage.getItem("role") || tokenPayload.role || "USER";
+
+if (usernameElement) {
+    usernameElement.innerHTML = `👤 <strong>${savedUsername}</strong> `;
 }
 
 if (logoutBtn) {
     logoutBtn.addEventListener("click", function () {
         localStorage.removeItem("toeicAccessToken");
         localStorage.removeItem("username");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("role");
         window.location.href = "login.html";
     });
 }
@@ -159,7 +168,7 @@ async function loadExams() {
 ========================= */
 
 async function executeSearchUnsafe(keyword) {
-    if (!keyword) {
+    if (keyword === null || keyword === undefined || keyword === "") {
         if (clearSearchBtn) clearSearchBtn.style.display = "none";
         renderExams(allExams);
         return;
@@ -236,7 +245,7 @@ async function executeSearchUnsafe(keyword) {
 if (searchForm) {
     searchForm.addEventListener("submit", function (e) {
         e.preventDefault();
-        const kw = searchInput ? searchInput.value.trim() : "";
+        const kw = searchInput ? searchInput.value : "";
         executeSearchUnsafe(kw);
     });
 }

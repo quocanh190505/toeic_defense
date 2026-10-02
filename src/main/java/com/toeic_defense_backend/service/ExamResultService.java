@@ -14,4 +14,6 @@ public interface ExamResultService {
     List<ExamResult> getResults();
 
     ExamResult getResult(Long id);
+
+    void deleteResult(Long id);
 }

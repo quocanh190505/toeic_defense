@@ -9,11 +9,62 @@ const resetButton = document.getElementById("resetButton");
 const navUsername = document.getElementById("navUsername");
 const logoutButton = document.getElementById("logoutButton");
 
-const accessToken = localStorage.getItem("toeicAccessToken") || "";
-const savedUsername = localStorage.getItem("username") || "";
+const profileUsername = document.getElementById("profileUsername");
+const profileRole = document.getElementById("profileRole");
 
-if (navUsername && savedUsername) {
-    navUsername.textContent = `Học viên: ${savedUsername}`;
+const accessToken = localStorage.getItem("toeicAccessToken") || "";
+
+let tokenPayload = {};
+try {
+    tokenPayload = JSON.parse(atob(accessToken.split(".")[1]));
+} catch (_) {}
+
+const savedUsername = localStorage.getItem("username") || tokenPayload.username || "User";
+const role = localStorage.getItem("role") || tokenPayload.role || "USER";
+
+if (navUsername) {
+    navUsername.innerHTML = `👤 <strong>${escapeHtml(savedUsername)}</strong> `;
+}
+
+const profileForm = document.getElementById("profileForm");
+const profileUsernameInput = document.getElementById("profileUsernameInput");
+const profileUpdateMessage = document.getElementById("profileUpdateMessage");
+
+if (profileUsername) profileUsername.textContent = savedUsername;
+if (profileUsernameInput) profileUsernameInput.value = savedUsername;
+
+if (profileForm) {
+    profileForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        profileUpdateMessage.textContent = "";
+
+        try {
+            const response = await fetch("/users/me", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ username: profileUsernameInput.value.trim() })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || "Không thể cập nhật hồ sơ.");
+            }
+
+            const updatedUsername = result.data.username;
+            localStorage.setItem("username", updatedUsername);
+            profileUsername.textContent = updatedUsername;
+            navUsername.innerHTML = `👤 <strong>${escapeHtml(updatedUsername)}</strong> `;
+            profileUpdateMessage.textContent = "Đã cập nhật hồ sơ.";
+        } catch (error) {
+            profileUpdateMessage.textContent = error.message;
+        }
+    });
+}
+if (profileRole) {
+    profileRole.textContent = role;
+    profileRole.className = `role-badge ${role === "ADMIN" ? "admin-role" : "user-role"}`;
 }
 
 if (logoutButton) {
@@ -21,6 +72,8 @@ if (logoutButton) {
         e.preventDefault();
         localStorage.removeItem("toeicAccessToken");
         localStorage.removeItem("username");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("role");
         window.location.href = "login.html";
     });
 }

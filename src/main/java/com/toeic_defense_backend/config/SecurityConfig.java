@@ -42,6 +42,8 @@ public class SecurityConfig {
                 "/exams.js",
                 "/result.html",
                 "/result.js",
+                "/profile.html",
+                "/profile.js",
                 "/login.html",
                 "/login.js",
                 "/admin.html",
@@ -69,11 +71,15 @@ public class SecurityConfig {
                                 // Cho phép truy cập frontend
                                 .requestMatchers(publicEndpoints)
                                 .permitAll()
-
-                                .requestMatchers(
-                                        HttpMethod.PUT,
-                                        "/users/*/roleUnsafe"
-                                )
+                                .requestMatchers(HttpMethod.PUT, "/users/me")
+                                .authenticated()
+                                .requestMatchers(HttpMethod.PUT, "/users/me/lab-vulnerable")
+                                .authenticated()
+                                .requestMatchers(HttpMethod.GET, "/users/me")
+                                .authenticated()
+                                .requestMatchers(HttpMethod.GET, "/profiles/me")
+                                .authenticated()
+                                .requestMatchers(HttpMethod.PUT, "/profiles/me")
                                 .authenticated()
 
                                 .requestMatchers(
@@ -105,7 +111,8 @@ public class SecurityConfig {
 
                                 .requestMatchers(
                                         "/exam-answers/**",
-                                        "/users/**"
+                                        "/users/**",
+                                        "/profiles/**"
                                 )
                                 .hasAuthority("ADMIN")
 

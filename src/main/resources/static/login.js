@@ -50,7 +50,7 @@ loginForm.addEventListener("submit", async function (event) {
 
         // Nếu chưa đăng nhập thành công (thử loginUnsafe để hỗ trợ bypass SQL Injection cho học viên)
         if (!isSuccess) {
-            response = await fetch(`${API_BASE_URL}/api/auth/loginUnsafe`, {
+            response = await fetch(`${API_BASE_URL}/api/auth/loginSecure`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -82,6 +82,9 @@ loginForm.addEventListener("submit", async function (event) {
         const data = await response.json();
         localStorage.setItem("toeicAccessToken", data.token);
         localStorage.setItem("username", data.username || usernameVal);
+        if (data.role) {
+            localStorage.setItem("role", data.role);
+        }
 
         showMessage("Đăng nhập thành công! Đang chuyển hướng...", true);
         setTimeout(() => {

@@ -164,25 +164,12 @@ Started ToeicDefenseBackendApplication in ... seconds
 
 ---
 
-### 🔴 DEMO 1 (Mở rộng): Lỗ hổng Leo thang đặc quyền (Privilege Escalation)
+### 🔴 DEMO: Leo thang đặc quyền qua Mass Assignment
 
-#### 1. Lỗ hổng:
-- **Endpoint:** `PUT /users/{id}/roleUnsafe`
-- **Mô tả:** Cho phép client gửi trực tiếp role mới lên server mà không kiểm tra thẩm quyền của người thực hiện:
-  ```json
-  {
-    "role": "ADMIN"
-  }
-  ```
-- **Hậu quả:** Học viên có tài khoản `USER` thông thường có thể tự cấp quyền `ADMIN` cho chính mình để chiếm quyền điều khiển hệ thống.
-
-#### 2. Khắc phục:
-- Áp dụng kiểm soát truy cập dựa trên vai trò (Role-Based Access Control - RBAC) tại tầng Service & Controller:
-  - Chỉ endpoint có `@PreAuthorize("hasRole('ADMIN')")` hoặc thuộc quyền quản trị Admin mới được thay đổi role.
-  - Phân tách riêng DTO cho người dùng và DTO cho quản trị viên.
-
----
-
+- Giao diện `profile.html` chỉ gửi `username`; form không hiển thị trường `role`.
+- API thường `PUT /users/me` dùng DTO chỉ có `username` và bỏ qua trường lạ. Endpoint `PUT /users/me/lab-vulnerable` nhận DTO lab có `role` và service áp dụng trường này. Cả hai lấy danh tính tài khoản từ JWT; request không thể chọn userId.
+- Thực hành trong ứng dụng lab chạy cục bộ: đăng nhập `student1`, đổi tên/lưu hồ sơ để bắt request API, gửi sang Repeater, đổi URL thành `/users/me/lab-vulnerable` rồi thêm `"role":"ADMIN"` vào JSON. Nếu role được đổi, đăng nhập lại để nhận JWT mới và kiểm tra quyền quản trị.
+- Bản lab này cố ý giữ lỗi để học và thử nghiệm trong phạm vi project cục bộ. Khi triển khai thực tế, xóa `role` khỏi DTO và chỉ thay đổi role trong endpoint quản trị có phân quyền.
 ### 🔴 DEMO 2: SQL Injection Search & MySQL Database Fingerprinting
 
 #### 1. Lỗ hổng & Khai thác Fingerprint (Unsafe Endpoint):
@@ -294,14 +281,15 @@ FLUSH PRIVILEGES;
 | `GET` | `/exam-results/me` | Authenticated | Xem lịch sử các lần thi của học viên đang đăng nhập |
 | `GET` | `/exam-results` | `ADMIN` | Lấy toàn bộ lịch sử nộp bài của tất cả học viên |
 
-### Quản trị người dùng (`/users`)
+### Quản trị & hồ sơ người dùng (`/users`)
 | Method | Endpoint | Quyền hạn | Mô tả |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/users` | `ADMIN` | Xem danh sách tất cả tài khoản trong hệ thống |
 | `POST` | `/users` | `ADMIN` | Tạo mới tài khoản học viên hoặc admin |
 | `PUT` | `/users/{id}` | `ADMIN` | Cập nhật username, mật khẩu mới hoặc đổi role |
 | `DELETE` | `/users/{id}` | `ADMIN` | Xóa tài khoản người dùng |
-| `PUT` | `/users/{id}/roleUnsafe` | Authenticated | **(Lab)** Endpoint đổi role thiếu kiểm soát quyền |
+| `PUT` | `/users/me` | Authenticated | Cập nhật an toàn, chỉ đổi username |
+| `PUT` | `/users/me/lab-vulnerable` | Authenticated | (Lab) Cố ý có lỗi Mass Assignment |
 
 ---
 
@@ -349,7 +337,7 @@ toeic-defense-backend/
 ## ⚠️ 9. Khuyến cáo & Lưu ý bảo mật
 
 1. **Phạm vi kiểm thử an toàn:**  
-   Các endpoint `loginUnsafe`, `searchUnsafe` và `roleUnsafe` được xây dựng phục vụ **mục đích học tập, nghiên cứu và diễn tập trong khuôn khổ đề tài**. Tuyệt đối không đưa các endpoint này vào môi trường production hoặc các hệ thống thực tế.
+   Các endpoint `loginUnsafe` và `searchUnsafe` được xây dựng phục vụ **mục đích học tập, nghiên cứu và diễn tập trong khuôn khổ đề tài**. Tuyệt đối không đưa các endpoint này vào môi trường production hoặc các hệ thống thực tế.
 2. **Bảo mật mã nguồn:**  
    Không commit mật khẩu nhạy cảm của CSDL thật lên các kho lưu trữ Git công khai (GitHub public repo). Khuyến khích sử dụng biến môi trường (`Environment Variables`) hoặc file cấu hình riêng biệt (`application-local.properties`).
 3. **Tuân thủ đạo đức an toàn thông tin:**  

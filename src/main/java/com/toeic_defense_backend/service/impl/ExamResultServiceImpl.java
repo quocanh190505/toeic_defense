@@ -94,6 +94,14 @@ public class ExamResultServiceImpl implements ExamResultService {
                 .orElseThrow(() -> new AppException(ErrorCode.EXAM_RESULT_NOT_FOUND));
     }
 
+    @Override
+    public void deleteResult(Long id) {
+        if (!examResultRepository.existsById(id)) {
+            throw new AppException(ErrorCode.EXAM_RESULT_NOT_FOUND);
+        }
+        examResultRepository.deleteById(id);
+    }
+
     private String serializeSubmittedAnswers(SubmitExamRequest request) {
         return request.getAnswers().stream()
                 .map(answer -> answer.getQuestionNumber() + ":" + answer.getSelectedAnswer())

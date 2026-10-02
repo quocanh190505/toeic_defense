@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TOEIC PTIT - Quản trị hệ thống</title>
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body class="home-page">
     <header class="header">
@@ -14,6 +14,7 @@
                 <a href="home.html">Trang chủ</a>
                 <a href="exams.html">Đề thi</a>
                 <a href="admin-results.html">Lịch sử làm bài</a>
+                <a href="profile.html" >Hồ sơ cá nhân</a>
                 <a href="admin.html" class="active">Quản trị Admin</a>
             </nav>
             <div class="user-menu">
@@ -27,7 +28,7 @@
     <main class="exam-container">
         <div class="admin-header-title">
             <h1>Trung tâm Quản trị Hệ thống</h1>
-            <p>Quản lý tài khoản người dùng, phân quyền hệ thống và quản lý ngân hàng đề thi.</p>
+            <p>Quản lý tài khoản người dùng, phân quyền hệ thống, ngân hàng đề thi và cấp quyền làm lại bài kiểm tra.</p>
         </div>
 
         <p id="adminMessage" class="auth-message" role="status"></p>
@@ -36,6 +37,7 @@
         <div class="admin-tabs">
             <button type="button" class="admin-tab-btn active" data-tab="tab-users">👥 Quản lý Người dùng & Phân quyền</button>
             <button type="button" class="admin-tab-btn" data-tab="tab-exams">📝 Quản lý Đề thi & Câu hỏi</button>
+            <button type="button" class="admin-tab-btn" data-tab="tab-retake">🔄 Cấp quyền làm lại đề thi</button>
         </div>
 
         <!-- ================= TAB 1: QUẢN LÝ NGƯỜI DÙNG & PHÂN QUYỀN ================= -->
@@ -147,7 +149,7 @@
                 </p>
                 <div class="form-group">
                     <label for="pdfFileInput">Chọn file .pdf</label>
-                    <input id="pdfFileInput" type="file" accept="application/pdf,.pdf" />
+                    <input id="pdfFileInput" type="file" accept="application/pdf,.pdf">
                 </div>
                 <div class="form-group">
                     <label for="pdfExamId">ID đề thi</label>
@@ -156,6 +158,37 @@
                 <button id="uploadPdfBtn" type="button" class="primary-btn-submit" style="width: auto;">
                     Đọc file PDF và nhập câu hỏi
                 </button>
+            </section>
+        </div>
+
+        <!-- ================= TAB 3: CẤP QUYỀN LÀM LẠI ================= -->
+        <div id="tab-retake" class="admin-tab-content">
+            <section class="admin-card">
+                <div class="admin-card-header">
+                    <h2>🔄 Danh sách bài thi học viên & Cấp quyền làm lại</h2>
+                    <button type="button" id="refreshRetakeBtn" class="secondary-btn-refresh">🔄 Làm mới danh sách</button>
+                </div>
+                <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                    Khi học viên nộp bài thi, bài thi đó sẽ bị khóa. Admin có thể bấm nút <strong>"Cho phép làm lại"</strong> bên dưới để xóa lượt thi cũ, giúp học viên vào làm lại đề thi từ đầu.
+                </p>
+                <div class="user-table-wrapper">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Học viên</th>
+                                <th>Tên bài thi</th>
+                                <th>Điểm số</th>
+                                <th>Số câu đúng</th>
+                                <th>Thời gian nộp</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="retakeTableBody">
+                            <tr><td colspan="7" style="text-align:center; padding: 20px;">Đang tải danh sách bài làm...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </section>
         </div>
     </main>
@@ -189,8 +222,21 @@
         </div>
     </div>
 
+    <!-- MODAL XEM ĐÁP ÁN ĐỀ THI -->
+    <div id="viewAnswersModal" class="score-modal" hidden>
+        <div class="score-modal-card edit-modal-card" style="max-width: 700px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+                <h2 id="answersModalTitle" style="margin: 0; font-size: 20px;">📋 Đáp án đề thi</h2>
+                <button type="button" id="closeAnswersModalBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+            </div>
+            <div id="answersModalBody" style="overflow-y: auto; margin-top: 16px; flex: 1;">
+                <p>Đang tải danh sách đáp án...</p>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="admin.js?v=11"></script>
-    <script src="change-password.js?v=11"></script>
+    <script src="admin.js?v=16"></script>
+    <script src="change-password.js?v=16"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 package com.toeic_defense_backend.controller;
 
 import com.toeic_defense_backend.dto.request.ProfileCreationRequest;
+import com.toeic_defense_backend.dto.request.PersonalProfileUpdateRequest;
 import com.toeic_defense_backend.dto.response.ApiResponse;
 import com.toeic_defense_backend.dto.response.ProfileResponse;
 import com.toeic_defense_backend.entity.Profile;
@@ -12,6 +13,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +25,31 @@ import java.util.stream.Collectors;
 public class ProfileController {
 
     ProfileService profileService;
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<ProfileResponse>> getOwnProfile(Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+        ApiResponse<ProfileResponse> response = ApiResponse.<ProfileResponse>builder()
+                .data(toProfileResponse(profileService.getOrCreateOwnProfile(userId)))
+                .status(HttpStatus.OK.value())
+                .message("Get profile successfully")
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<ProfileResponse>> updateOwnProfile(
+            @RequestBody @Valid PersonalProfileUpdateRequest request,
+            Authentication authentication
+    ) {
+        Long userId = Long.parseLong(authentication.getName());
+        ApiResponse<ProfileResponse> response = ApiResponse.<ProfileResponse>builder()
+                .data(toProfileResponse(profileService.updateOwnProfile(userId, request)))
+                .status(HttpStatus.OK.value())
+                .message("Profile updated successfully")
+                .build();
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProfileResponse>> createProfile(

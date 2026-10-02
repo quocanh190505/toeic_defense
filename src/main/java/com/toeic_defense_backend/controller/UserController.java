@@ -2,6 +2,8 @@ package com.toeic_defense_backend.controller;
 
 import com.toeic_defense_backend.dto.response.ApiResponse;
 import com.toeic_defense_backend.dto.request.UpdateRoleRequest;
+import com.toeic_defense_backend.dto.request.ProfileUpdateRequest;
+import com.toeic_defense_backend.dto.request.SafeProfileUpdateRequest;
 import com.toeic_defense_backend.dto.request.UserCreationRequest;
 import com.toeic_defense_backend.dto.response.UserResponse;
 import com.toeic_defense_backend.entity.User;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -72,15 +75,43 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @PutMapping("/{userId}/roleUnsafe")
-    public ResponseEntity<ApiResponse<UserResponse>> updateRoleUnsafe(
-            @PathVariable Long userId,
-            @RequestBody @Valid UpdateRoleRequest request
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> updateOwnProfile(
+            @RequestBody @Valid SafeProfileUpdateRequest request,
+            Authentication authentication
     ) {
+        Long authenticatedUserId = Long.parseLong(authentication.getName());
+        User updatedUser = userService.updateOwnProfile(authenticatedUserId, request);
         ApiResponse<UserResponse> apiResponse = ApiResponse.<UserResponse>builder()
-                .data(toUserResponse(userService.updateRole(userId, request.getRole())))
+                .data(toUserResponse(updatedUser))
                 .status(HttpStatus.OK.value())
-                .message("Update role successfully")
+                .message("Profile updated successfully")
+                .build();
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PutMapping("/me/lab-vulnerable")
+    public ResponseEntity<ApiResponse<UserResponse>> updateOwnProfileVulnerableLab(
+            @RequestBody @Valid ProfileUpdateRequest request,
+            Authentication authentication
+    ) {
+        Long authenticatedUserId = Long.parseLong(authentication.getName());
+        User updatedUser = userService.updateOwnProfileVulnerableLab(authenticatedUserId, request);
+        ApiResponse<UserResponse> apiResponse = ApiResponse.<UserResponse>builder()
+                .data(toUserResponse(updatedUser))
+                .status(HttpStatus.OK.value())
+                .message("Lab profile updated successfully")
+                .build();
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getOwnProfile(Authentication authentication) {
+        Long authenticatedUserId = Long.parseLong(authentication.getName());
+        ApiResponse<UserResponse> apiResponse = ApiResponse.<UserResponse>builder()
+                .data(toUserResponse(userService.getUser(authenticatedUserId)))
+                .status(HttpStatus.OK.value())
+                .message("Get profile successfully")
                 .build();
         return ResponseEntity.ok(apiResponse);
     }

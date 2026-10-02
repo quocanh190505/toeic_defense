@@ -9,16 +9,21 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    const tokenPayload = JSON.parse(atob(accessToken.split(".")[1]));
+    let tokenPayload = {};
+    try {
+        tokenPayload = JSON.parse(atob(accessToken.split(".")[1]));
+    } catch (_) {}
+
     const adminLink = document.querySelector('a[href="admin.html"]');
     const usernameElement = document.getElementById("username");
-    const username = localStorage.getItem("username");
+    const username = localStorage.getItem("username") || tokenPayload.username || "User";
+    const role = localStorage.getItem("role") || tokenPayload.role || "USER";
 
-    if (usernameElement && username) {
-        usernameElement.textContent = `Xin chào ${username}`;
+    if (usernameElement) {
+        usernameElement.innerHTML = `👤 <strong>${username}</strong> `;
     }
 
-    if (adminLink && tokenPayload.role !== "ADMIN") {
+    if (adminLink && role !== "ADMIN") {
         adminLink.remove();
     }
 
@@ -35,6 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // Xóa token
             localStorage.removeItem("toeicAccessToken");
             localStorage.removeItem("username");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("role");
 
             // Quay về trang đăng nhập
             window.location.href = "login.html";
