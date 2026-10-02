@@ -271,8 +271,7 @@ oot của Database ở bước này, hệ lụy sinh ra là vô cùng khủng kh
 ### 🟢 DEMO 5: Chặn đứng thảm họa bằng "Least Privilege" (Trên hệ thống mới 3306)
 
 #### 1. Tư duy phòng thủ
-Kể cả khi đã nâng cấp lên MySQL xịn nhất, chúng ta tuyệt đối KHÔNG bao giờ đi vào lối mòn cũ là để Backend ứng dụng sử dụng mật khẩu 
-oot. 
+Kể cả khi đã nâng cấp lên MySQL xịn nhất, chúng ta tuyệt đối KHÔNG bao giờ đi vào lối mòn cũ là để Backend ứng dụng sử dụng mật khẩu root. 
 **Giải pháp:** Áp dụng nguyên tắc "Least Privilege" (Đặc quyền tối thiểu), tạo riêng một tài khoản nội bộ cho API chỉ có quyền Đọc/Ghi dữ liệu thường ngày, KHÔNG CÓ bất kỳ quyền thao tác cấu trúc (DDL) nào.
 
 #### 2. Cấu hình thực hành dành cho nhóm (Tại MySQL Native 3306)
