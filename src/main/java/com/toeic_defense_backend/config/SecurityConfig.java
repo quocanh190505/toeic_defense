@@ -73,7 +73,7 @@ public class SecurityConfig {
                                 .permitAll()
                                 .requestMatchers(HttpMethod.PUT, "/users/me")
                                 .authenticated()
-                                .requestMatchers(HttpMethod.PUT, "/users/me/lab-vulnerable")
+                                .requestMatchers(HttpMethod.PUT, "/users/api/users/profile")
                                 .authenticated()
                                 .requestMatchers(HttpMethod.GET, "/users/me")
                                 .authenticated()

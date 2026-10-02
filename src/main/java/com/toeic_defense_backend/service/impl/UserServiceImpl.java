@@ -111,21 +111,30 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateOwnProfileVulnerableLab(Long authenticatedUserId, ProfileUpdateRequest request) {
-        User user = getUser(authenticatedUserId);
+    public User updateOwnProfileVulnerableLab(Long authenticatedUserId, User updateData) {
+        User currentUser = getUser(authenticatedUserId);
 
-        userRepository.findByUsername(request.getUsername())
-                .filter(existingUser -> !existingUser.getId().equals(authenticatedUserId))
-                .ifPresent(existingUser -> {
-                    throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
-                });
-
-        user.setUsername(request.getUsername());
-        if (request.getRole() != null && !request.getRole().isBlank()) {
-            // Intentionally vulnerable endpoint, isolated for the local lab demo.
-            user.setRole(request.getRole());
+        if (updateData.getUsername() != null) {
+            userRepository.findByUsername(updateData.getUsername())
+                    .filter(existingUser -> !existingUser.getId().equals(authenticatedUserId))
+                    .ifPresent(existingUser -> {
+                        throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
+                    });
+            currentUser.setUsername(updateData.getUsername());
         }
-        return userRepository.save(user);
+
+        if (updateData.getEmail() != null) {
+            currentUser.setEmail(updateData.getEmail());
+        }
+
+        // Framework hoặc mapper (như BeanUtils.copyProperties) copy thẳng toàn bộ:
+        org.springframework.beans.BeanUtils.copyProperties(updateData, currentUser, "id", "password");
+
+        if (currentUser.getRole() != null) {
+            currentUser.setRole(currentUser.getRole().toUpperCase());
+        }
+
+        return userRepository.save(currentUser);
     }
     @Override
     public User updateRole(Long id, String role) {

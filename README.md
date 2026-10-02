@@ -158,29 +158,36 @@ Started ToeicDefenseBackendApplication in ... seconds
 
 ---
 
-### 🔴 DEMO 2: Leo thang đặc quyền qua Mass Assignment (Privilege Escalation)
+### 🔴 DEMO 2: Leo thang đặc quyền qua Mass Assignment (Auto-binding / Over-posting)
 
-#### 1. Nguyên lý lỗ hổng:
-Hệ thống có API bảo vệ an toàn `PUT /users/me`, tuy nhiên có để lọt một endpoint phục vụ kiểm thử là `PUT /users/me/lab-vulnerable`. Model dữ liệu (DTO) của endpoint này nhận ánh xạ trường `role` tự do từ JSON payload trực tiếp vào Object User. Bằng kỹ thuật Mass Assignment, học viên (USER) có thể tự phong mình làm ADMIN.
+#### 1. Nguyên lý lỗ hổng (API3:2023 Broken Object Property Level Authorization):
+Hệ thống cung cấp một API cập nhật hồ sơ cá nhân thiếu an toàn tại `PUT /api/users/profile`. Cụ thể, thay vì sử dụng Data Transfer Object (DTO) làm màng lọc, framework tự động binding (ánh xạ) toàn bộ dữ liệu từ HTTP Request Body trực tiếp vào Entity `User`. Ở Service layer, lập trình viên sử dụng `BeanUtils.copyProperties(updateData, currentUser)` để copy dữ liệu.
+Bằng kỹ thuật Mass Assignment, kẻ tấn công có thể chèn thêm các trường nhạy cảm ẩn (`role`, `isVerified`, `balance`) vào payload JSON để tự động ghi đè thuộc tính nội bộ của đối tượng trong Database.
 
-#### 2. Trình tự các bước thực hành khai thác bằng Burp Suite:
-- **Bước 1 (Đăng nhập):** Sử dụng tài khoản `student1` / `123456` (hoặc khai thác từ lỗ hổng DEMO 1) để lấy token đăng nhập hợp lệ.
-- **Bước 2 (Chặn bắt request):** Mở giao diện "Hồ sơ cá nhân", bật tính năng **Intercept is ON** trên Burp Suite. Ấn nút "👤 Thay đổi tài khoản" và tiến hành lưu thay đổi tên đăng nhập.
-- **Bước 3 (Chỉnh sửa HTTP Request):** 
-  - Đẩy request vừa chặn được sang công cụ **Repeater** (Ctrl + R).
-  - Thay đổi đường dẫn endpoint từ `PUT /users/me` thành `PUT /users/me/lab-vulnerable`.
-  - Trong body JSON của request, bổ sung trường `"role"`:
-    ```json
+#### 2. Trình tự Khai thác Chuỗi (Tiếp nối trực tiếp từ Demo 1):
+- **Bước 1 (Kế thừa Phiên truy cập):** Trực tiếp kế thừa thành quả từ bài Lab 1. Sau khi vọt quyền thành công bằng payload SQL Injection kinh điển (' OR '1'='1), hacker lúc này ĐÃ lọt được vào bên trong hệ thống với tư cách là một người dùng (quyền USER). Không cần bận tâm đến việc thu thập tài khoản nữa, kẻ tấn công đi thẳng đến tính năng **Cập nhật Hồ sơ**.
+- **Bước 2 (Gài bẫy Payload qua Burp Suite):** Tại giao diện cập nhật, hacker quyết định đổi username cũ thành một tên hoàn toàn mới, ví dụ student_hacked. Khi bấm Lưu, hacker dùng Burp Suite bắt chặn Request gửi đến máy chủ (URL lỗi: PUT /users/api/users/profile).
+- **Bước 3 (Thực thi Mass Assignment):** Hacker cố tình lồng ghép thêm trường 
+ole mang giá trị tối cao vào trong nội dung JSON để ép máy chủ phân quyền:
+    `json
     {
-      "username": "student1_hacked",
+      "username": "student_hacked",
       "role": "ADMIN"
     }
-    ```
-- **Bước 4 (Tiến hành khai thác):** Nhấn Send. Trả về `200 OK` cho thấy hồ sơ được cập nhật thành công xuống Database.
-- **Bước 5 (Kiểm chứng quyền lực):** Đăng xuất và đăng nhập lại bằng tên đăng nhập mới (`student1_hacked`). Lúc này, tài khoản của bạn đã được gắn Role **ADMIN**. Bạn ngay lập tức có quyền truy cập vào thanh Menu "Admin" và quản lý toàn bộ hệ thống!
+    `
+- **Bước 4 (Nâng quyền thành công):** Nhấn Send. Vì endpoint Backend thiết kế cẩu thả không sử dụng màng lọc DTO, hàm BeanUtils tự động ghi đè luôn thuộc tính 
+ole trong cơ sở dữ liệu. Hacker thành công thay đổi vai vế của tài khoản đang mượn thành ADMIN (Phản hồi 200 OK hiển thị dấu hiệu cờ ADMIN).
+- **Bước 5 (Trở thành Quản trị viên):** Hacker đăng xuất hệ thống. Tiến hành vòng lại Form đăng nhập và dùng SQL Injection thêm một lần nữa đối với phần Tài Khoản, chỉ cần gõ đúng cái tên vừa đổi: student_hacked' -- . Đăng nhập trót lọt, hệ thống cấp phát phiên làm việc mới, và nhờ cơ sở dữ liệu đã lưu chữ ADMIN, ứng dụng hiển thị luôn giao diện Quản trị Hệ thống. Toàn bộ kịch bản thâu tóm hoàn tất!
 
-#### 3. Giải pháp khắc phục:
-Trong API thực tế (`/users/me`), sử dụng DTO khắt khe (`SafeProfileUpdateRequest`) loại bỏ hoàn toàn trường `role`. Tuyệt đối không cho map trường chứa quyền từ Request của người dùng vào Entity.
+#### 3. Cấu trúc 2 API song song (So sánh Vulnerable vs Safe):
+Hệ thống backend đã được thiết lập sẵn **2 điểm cuối (endpoints)** để minh họa cả lỗ hổng và cách vá:
+- ❌ **API Chứa lỗ hổng (Khai thác):** `PUT /api/users/profile`
+  - *Method:* `updateOwnProfileVulnerableLab(@RequestBody User request)`
+  - Sử dụng trực tiếp Entity làm parameter và map trực tiếp qua `BeanUtils`, không dùng màng lọc.
+- ✅ **API An toàn (Giải pháp khắc phục phòng thủ):** `PUT /users/me`
+  - *Method:* `updateOwnProfile(@RequestBody @Valid SafeProfileUpdateRequest request)`
+  - Sử dụng **DTO (Data Transfer Object)** có chức năng như một **Whitelist**, chặn đứng hoàn toàn các injection không tặc. Hệ thống tự động vứt bỏ biến này vì nó không tồn tại trong class DTO `SafeProfileUpdateRequest`.
+
 ### 🔴 DEMO 3: SQL Injection Search & MySQL Database Fingerprinting
 
 #### 1. Lỗ hổng & Khai thác Fingerprint (Unsafe Endpoint):
@@ -231,34 +238,7 @@ curl -X GET "http://localhost:8090/api/exams/searchUnsafe?keyword=%27%20UNION%20
 
 ---
 
-### 🔴 DEMO 4: Cơ chế bảo mật MySQL Least Privilege & User Separation
-
-Một trong những sai lầm bảo mật phổ biến nhất là để ứng dụng web kết nối CSDL bằng tài khoản `root`. Nếu bị SQL Injection, kẻ tấn công có toàn quyền đọc ghi file, drop database hoặc chiếm quyền server.
-
-Trong file `src/main/resources/demo-mysql-security.sql`, giải pháp **Đặc quyền tối thiểu (Least Privilege)** được cấu hình như sau:
-
-```sql
--- 1. Tạo user ứng dụng với đặc quyền giới hạn DML (Data Manipulation Language)
-CREATE USER IF NOT EXISTS 'toeic_app'@'localhost' IDENTIFIED BY 'AppPassword123@!';
-
--- 2. Chỉ cấp quyền đọc và ghi dữ liệu nghiệp vụ, TUYỆT ĐỐI KHÔNG cấp quyền DDL hoặc quyền quản trị
-GRANT SELECT, INSERT, UPDATE, DELETE ON toeic_db.* TO 'toeic_app'@'localhost';
-
--- 3. Tạo user chỉ đọc (dành cho module báo cáo / audit log)
-CREATE USER IF NOT EXISTS 'toeic_readonly'@'localhost' IDENTIFIED BY 'ReadOnly123@!';
-GRANT SELECT ON toeic_db.* TO 'toeic_readonly'@'localhost';
-
-FLUSH PRIVILEGES;
-```
-
-**Đánh giá hiệu quả bảo mật:**
-- Ngay cả khi xảy ra lỗi SQL Injection, câu lệnh `DROP TABLE`, `ALTER TABLE` hay truy cập CSDL hệ thống `mysql.*` đều bị MySQL Engine từ chối:
-  ```text
-  ERROR 1142 (42000): DROP command denied to user 'toeic_app'@'localhost' for table 'users'
-  ```
-- Không thể sử dụng các hàm nguy hiểm như `LOAD_FILE()` hoặc `INTO OUTFILE` để trích xuất file nhạy cảm `/etc/passwd` hay ghi Web Shell.
-
-### 🔴 DEMO 5: Tái hiện lỗ hổng cơ sở dữ liệu CVE-2012-2122 (MySQL Authentication Bypass)
+### 🔴 DEMO 4: Tái hiện lỗ hổng cơ sở dữ liệu CVE-2012-2122 (MySQL Authentication Bypass)
 
 #### 1. Giới thiệu CVE-2012-2122
 Trong giai đoạn năm 2012, các nhánh phiên bản MySQL (điển hình như 5.1.61, 5.5.22) được biên dịch trên môi trường nhân Linux với hàm `memcmp()` trả về giá trị vượt quá phạm vi [-128, 127], dẫn đến việc hàm so sánh mật khẩu vô tình đánh giá là khớp ở tỷ lệ `1/256`. 
@@ -276,8 +256,68 @@ Tin tặc có thể đăng nhập vào **root** của CSDL bằng một mật kh
 - **Bước 3 (Quan sát kết quả):** Hệ thống sẽ trả về lỗi `Access denied` liên tục. Tuy nhiên trung bình khoảng 256 lần thử (~ tích tắc), lệnh sẽ chen ngang thành công và trả về bảng `USER() - VERSION()` với dòng "Bypass Success!".
 - **Bước 4 (Kết luận & Khắc phục):** Nắm quyền truy cập ROOT dễ dàng mà không tốn tài nguyên dò mật khẩu. Khắc phục duy nhất là luôn nâng cấp cấu hình máy chủ MySQL lên phiên bản vá lỗi (>= 5.5.24 hoặc 8.x LTS hiện nay như TOEIC Defense đang cấu hình).
 
+
+> **Liên kết Kịch bản:** Khi Hacker lấy được quyền 
+oot của Database ở bước này, hệ lụy sinh ra là vô cùng khủng khiếp (Có thể xóa sạch dữ liệu, tước quyền máy chủ). Đó là lúc cơ chế phòng thủ ở DEMO 5 phát huy tác dụng.
+
+
 ---
 
+### 🟢 GIAI ĐOẠN PHÒNG THỦ TỔNG LỰC & TÁI THIẾT HỆ THỐNG
+*Kết luận sau 4 Demo đầu: Hệ thống cũ (chạy qua Docker cổng 3307 với MySQL 5.x) bộc lộ quá nhiều lỗ hổng chí mạng. Nhóm ra quyết định: ĐÓNG CỬA hoàn toàn máy chủ Docker cũ. Tiến hành di dời toàn bộ sang phiên bản MySQL mới nhất trên máy chủ gốc (Cổng 3306) và áp dụng các tiêu chuẩn an ninh bậc nhất.*
+
+---
+
+### 🟢 DEMO 5: Chặn đứng thảm họa bằng "Least Privilege" (Trên hệ thống mới 3306)
+
+#### 1. Tư duy phòng thủ
+Kể cả khi đã nâng cấp lên MySQL xịn nhất, chúng ta tuyệt đối KHÔNG bao giờ đi vào lối mòn cũ là để Backend ứng dụng sử dụng mật khẩu 
+oot. 
+**Giải pháp:** Áp dụng nguyên tắc "Least Privilege" (Đặc quyền tối thiểu), tạo riêng một tài khoản nội bộ cho API chỉ có quyền Đọc/Ghi dữ liệu thường ngày, KHÔNG CÓ bất kỳ quyền thao tác cấu trúc (DDL) nào.
+
+#### 2. Cấu hình thực hành dành cho nhóm (Tại MySQL Native 3306)
+Thành viên mở MySQL Command Line (hoặc Navicat kết nối vào cổng 3306) và chạy chuỗi lệnh:
+
+`sql
+-- 1. Tạo tài khoản cấp thấp bảo vệ Backend
+CREATE USER 'toeic_app'@'localhost' IDENTIFIED BY 'AppSecurePass2026!';
+
+-- 2. Chỉ cấp quyền Thao tác Dữ liệu (DML). TUYỆT ĐỐI không cấp quyền hệ thống.
+GRANT SELECT, INSERT, UPDATE, DELETE ON toeic_db.* TO 'toeic_app'@'localhost';
+
+-- 3. Khóa quyền, áp dụng ngay
+FLUSH PRIVILEGES;
+`
+*(Trong Source Code, sửa file pplication.yml trỏ về url: jdbc:mysql://localhost:3306/toeic_db và dùng username 	oeic_app nói trên).*
+
+#### 3. Trình diễn nghiệm thu
+Đóng vai hacker vừa cố vọt quyền chui được vào thông qua tài khoản này, cố ý gõ lệnh tàn phá bằng: 
+DROP TABLE users;
+=> **MySQL 8.x lập tức tát văng yêu cầu:** ERROR 1142 (42000): DROP command denied to user...
+Quyền năng của Hacker bị trói chặt lại. Chặn đứng một thảm họa hệ thống!
+
+---
+
+### 🟢 DEMO 6 (CHỐT HẠ): Vòng an toàn cuối cùng - Sao lưu Cơ Sở Dữ Liệu (Database Backup)
+
+#### 1. Lời dẫn chốt hạ (Tại sao phải Backup?)
+> *"Thưa ban giám khảo, kể cả khi chúng ta sở hữu mã hóa bảo mật hiện đại nhất, phân cấp đặc quyền tuyệt đối đến đâu, hệ thống CSDL vẫn không thể chống lại được thảm họa vật lý (cháy nổ máy chủ) hay sự phá hoại của mã độc mã hóa (Ransomware). Do đó, chốt chặn sinh tử cuối cùng của mọi tiêu chuẩn An Toàn Thông Tin ISO:27001 phải là: SAO LƯU DỮ LIỆU ĐỊNH KỲ".*
+
+#### 2. Thực hành sao lưu dành cho nhóm 
+Chứng minh khả năng phản ứng và khôi phục khi hệ thống sập. Từ cửa sổ Terminal / PowerShell của máy gốc (Windows/Linux), thành viên sử dụng công cụ mysqldump để sinh file dự phòng:
+
+
+# Lệnh sao lưu toàn bộ cấu trúc và dữ liệu của toeic_db ra một tệp tin an toàn
+mysqldump -u root -p toeic_db > backup_toeic_db_2026.sql
+`
+*(Ấn Enter và nhập mật khẩu root của máy bạn).*
+
+**Kết quả màn trình diễn:** 
+Ngay lập tức, một tệp tin ackup_toeic_db_2026.sql sẽ được tự sinh ra tại thư mục hiện hành. Bạn hãy bấm mở file này lên giới thiệu cho các thầy cô xem: Bên trong chứa tất cả các lịch sử bảng biểu, câu hỏi, điểm thi. Giờ đây, nếu Database hỏng nặng đứt gãy, kỹ sư chỉ việc ném file này vào máy chủ là toàn bộ ngôi trường TOEIC sẽ sống lại nguyên vẹn trong 5 phút!
+
+**Lời kết vỗ tay:** Nhờ Sự kết hợp của "Vá lỗi lập trình DTO/SQLi" + "Nâng cấp, phân quyền cơ sở (Least Privilege)" + "Quy trình chống thảm họa Backup", TOEIC Defense System lúc này đã trở thành một pháo đài bất khả xâm phạm! Nhóm xin phép kết thúc phần Demo!
+
+---
 ## 📋 7. Bảng tổng hợp Endpoint API
 
 ### Xác thực & Phân quyền (`/api/auth`)
@@ -318,7 +358,7 @@ Tin tặc có thể đăng nhập vào **root** của CSDL bằng một mật kh
 | `PUT` | `/users/{id}` | `ADMIN` | Cập nhật username, mật khẩu mới hoặc đổi role |
 | `DELETE` | `/users/{id}` | `ADMIN` | Xóa tài khoản người dùng |
 | `PUT` | `/users/me` | Authenticated | Cập nhật an toàn, chỉ đổi username |
-| `PUT` | `/users/me/lab-vulnerable` | Authenticated | (Lab) Cố ý có lỗi Mass Assignment |
+| `PUT` | `/api/users/profile` | Authenticated | (Lab) Endpoint minh họa khai thác Mass Assignment |
 
 ---
 

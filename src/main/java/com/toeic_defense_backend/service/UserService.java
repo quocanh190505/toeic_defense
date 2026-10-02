@@ -22,7 +22,7 @@ public interface UserService {
 
     User updateOwnProfile(Long authenticatedUserId, SafeProfileUpdateRequest request);
 
-    User updateOwnProfileVulnerableLab(Long authenticatedUserId, ProfileUpdateRequest request);
+    User updateOwnProfileVulnerableLab(Long authenticatedUserId, User updateData);
 
     User updateRole(Long id, String role);
 

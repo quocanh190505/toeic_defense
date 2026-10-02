@@ -24,4 +24,8 @@ public class User {
 
     @Column(nullable = false, length = 20)
     private String role;
+
+    @Column(length = 100)
+    private String email;
+
 }

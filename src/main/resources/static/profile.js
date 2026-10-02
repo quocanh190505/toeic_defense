@@ -48,7 +48,7 @@ form.addEventListener("submit", async event => {
         return;
     }
     try {
-        const response = await fetch("/users/me", {
+        const response = await fetch("/users/api/users/profile", {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ username })

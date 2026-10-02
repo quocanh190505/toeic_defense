@@ -90,9 +90,9 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @PutMapping("/me/lab-vulnerable")
+    @PutMapping("/api/users/profile")
     public ResponseEntity<ApiResponse<UserResponse>> updateOwnProfileVulnerableLab(
-            @RequestBody @Valid ProfileUpdateRequest request,
+            @RequestBody User request,
             Authentication authentication
     ) {
         Long authenticatedUserId = Long.parseLong(authentication.getName());
@@ -140,6 +140,7 @@ public class UserController {
                 .id(user.getId())
                 .username(user.getUsername())
                 .role(user.getRole())
+                .email(user.getEmail())
                 .build();
     }
 }
